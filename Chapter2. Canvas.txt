@@ -1,0 +1,1119 @@
+# UI System Blackbook Code by 박춘언 (hermetpark@gmail.com)
+
+
+@코드 2.1 32비트 비트맵에 색상 값 기록
+----------------------------------------------------------------------------------------
+01 // 4바이트 크기의 가로 10, 세로 10 크기의 비트맵 데이터
+02 RGBA32 bitmap[10, 10]
+03 
+04 bitmap[0, 0] = 0xff0000ff   // 첫 번째 행의 첫 번째 화소 색상은 적색
+05 bitmap[0, 1] = 0x00ff00ff   // 첫 번째 행의 두 번째 화소 색상은 녹색
+06 bitmap[0, 2] = 0x0000ffff   // 첫 번째 행의 세 번째 화소 색상은 청색
+07 ...
+08 bitmap[1, 0] = 0xffff00ff   // 두 번째 행의 첫 번째 화소 색상은 황색
+09 bitmap[1, 1] = 0xff00ffff   // 두 번째 행의 두 번째 화소 색상은 보라색
+10 bitmap[1, 2] = 0xffffffff   // 두 번째 행의 세 번째 화소 색상은 흰색
+11 ...
+12 bitmap[9, 7] = 0x000000ff   // 열 번째 행의 여덟 번째 화소 색상은 검정
+13 bitmap[9, 8] = 0x00ffffff   // 열 번째 행의 아홉 번째 화소 색상은 청록색
+14 bitmap[9, 9] = 0xffffffff   // 열 번째 행의 열 번째 화소 색상은 흰색
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.2 화소에 알파 값 적용
+----------------------------------------------------------------------------------------
+01 /*
+02  * 화소 데이터 투명 값 적용 식: RGB * (A / 255)
+03  * @p src: RGBA32, 비-선적용 알파 픽셀
+04 */
+05 preMultiplyAlpha(src):
+06     A = src & 0x000000ff
+07     R = ((src >> 24) & 0xff) * (A / 255)
+08     G = ((src >> 16) & 0xff) * (A / 255)
+09     B = ((src >> 8) & 0xff) * (A / 255)
+10     return (R << 24 | G << 16 | < B << 8 | A)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.3 이미디어트 렌더링 구현 예
+----------------------------------------------------------------------------------------
+01 /* 이미지를 교체하고 버튼의 위치를 이동
+02    버튼과 이미지의 인스턴스는 이전에 생성, 초기화되었다고 가정 */
+03 update():
+04     // 새 이미지를 불러온다.
+05     img.path = "sample.png"
+06 
+07     // 변경된 이미지를 화면에 그리기 위해 무효 영역 설정
+08     invalidateRegion(img.geometry)
+09
+10     // 버튼 변화를 위해 변경 전 영역을 무효 영역으로 설정
+11     invalidateRegion(btn.geometry)
+12
+13     // 버튼 위치가 (200, 200)에서 (300, 300)으로 이동
+14     btn.position = {300, 300}
+15 
+16     // 버튼 새 위치를 기준으로 화면을 다시 그림
+17     invalidateRegion(btn.geometry)
+18
+19     // 무효 영역 지정 후에는 이미지와 버튼 렌더링 수행
+20     render()
+21
+22     // 이 시점에 화면에서 이미지와 버튼 위치가 바뀐 것을 확인할 수 있다.
+23     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.4 리테인드 렌더링 구현 예
+----------------------------------------------------------------------------------------
+01 /* 이미지를 교체하고 버튼의 위치를 이동
+02    버튼과 이미지의 인스턴스는 이전에 생성, 초기화되었다고 가정 */
+03 update():
+04     // 새 이미지를 불러온다.
+05     img.path = "sample.png"
+06
+07     // 버튼 위치가 (200, 200)에서 (300, 300)으로 이동
+08     btn.position = {300, 300}
+09
+10     /* 이미디어트 렌더링에 비해 코드가 간소하다. 렌더링을 직접 요청하지도
+11        않는다. 하지만 이 시점에서 화면상에 이미지와 버튼 위치가
+12        바뀌었을까?... 사용자 입장에서는 알 수 없다. */
+13     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.5 윈도 초기화 및 캔버스 매핑 과정
+----------------------------------------------------------------------------------------
+01 // 전통적인 윈도 기능을 구현한다. UI 앱을 출력하는 뷰로 해석할 수 있다.
+02 UIWindow:
+03     /* 윈도 관리자는 윈도 형식에 따라 관리 정책을 달리 적용
+04        일부 선택 옵션은 앱의 권한에 따라 허용이 불가할 수 있다.
+05        Basic: 일반 UI 앱 윈도
+06        Gadget: 데스크톱 작업 공간에 배치되는 가젯 형태의 윈도
+07        Popup: 일시적인 문맥 전환을 위한 윈도. 타 윈도보다 우선순위가 높다.
+08        Notification: 사용자에게 알림 정보를 보여주기 위한 윈도
+09        그 외 필요에 따라 다른 형식의 윈도를 정의, 설계할 수 있다. */
+10     UIWindowType = [Basic, Gadget, Popup, Notification, ... ]
+11     UIWindowType type         // 현 윈도 객체의 형식
+12     UICanvas canvas           // 윈도에 매핑할 캔버스 객체
+13
+14     /* 윈도 시스템에서 제공하는 통신 객체. 
+15        윈도 서버와 윈도 상태 등의 정보 메시지를 주고받기 위한 클라이언트 통신 수행 */
+16     WindowClient client
+17
+18     // 윈도 생성 시 형식 결정(기본값: Basic)
+19     constructor(parent, type = UIWindowType.Basic):
+20         // 윈도의 부모-자식 관계 구축
+21         parentClient = parent.valid() ? parent.client : invalid
+22 
+23         // 네이티브 윈도를 생성
+24         switch type
+25             UIWindowType.Basic, UIWindowType.Gadget:
+26                 .client = WindowClient(parentClient, ClientType.TopLevel)
+27             UIWindow.TypeNotification, UIWindow.TypePopup:
+28                 .client = WindowClient(parentClient, ClientType.Modal)
+29             ...
+30
+31         // 윈도 크기 변환 이벤트 발생 시 수행할 동작 구현
+32         // client: 윈도 클라이언트 객체
+33         // size: 변경하고자 하는 윈도 크기
+34         func(client, size):
+35             /* 출력 버퍼 크기를 size에 맞게 재생성하고 윈도 내 UI 및 레이아웃
+36                도 재조정해야 한다. */
+37             ...
+38 
+39        /* 윈도 서버가 클라이언트에 윈도 상태 변경을 요청하면
+40            등록해 놓은 이벤트를 통해 필요한 UIWindow의 동작 수행.
+41            동일 방식으로 Visibility, Position 등의 상태도 존재할 것이다. */
+42         .client.EventSize += {func, ...}
+43         ...
+44 
+45         /* 캔버스 객체 초기화. 윈도 클라이언트를 전달하여 렌더링 엔진이
+46            프레임 버퍼를 윈도에 매핑할 수 있는 연결고리 생성 */
+47         .canvas.setup(.client, ...)
+48 
+49         // 캔버스를 UI 엔진(전역 객체)에 등록
+50         UIEngine.register(.canvas)
+51         ...
+52
+53     /* UIWindow의 크기 변경
+54        캔버스의 출력 버퍼(프레임 버퍼) 크기를 바꾸고 윈도 서버에도 그 정보를 전달 */
+55     size(w, h):
+56         // 캔버스 크기 변경
+57         .canvas.size(w, h)
+58         // 윈도 서버에 크기 변경 사실을 알림
+59         .client.request(w, h)
+60         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.6 UI 엔진과 캔버스의 연동
+----------------------------------------------------------------------------------------
+01 /*
+02  * UIEngine은 UI 엔진을 구동하는 클래스
+03  * 주 역할은 메인 루프를 가동하고 시스템과 사용자 이벤트를 처리.
+04  * 메인 루프를 수행하면서 캔버스가 렌더링을 수행하도록 호출한다.
+05 */
+06 UIEngine:
+07     UICanvas canvas // 등록한 캔버스 객체
+08     ...
+09     /*
+10      * 렌더링을 수행할 캔버스 지정
+11      * @p canvas: UICanvas
+12     */
+13     register(canvas):
+14         /* 다수의 윈도를 생성하는 앱을 허용할 경우 단일 캔버스가 아닌
+15            캔버스 목록을 고려해야 함. 아니면 엔진당 하나의 캔버스로 제한을 둘까? */
+16         .canvas = canvas
+17 
+18     // 메인 루프 가동
+19     run():
+20         while running
+21             // 이벤트 대기
+22             ...
+23             // 이벤트 처리
+24             ...
+25             // 캔버스 갱신 후 렌더링 수행
+26             if .canvas.update()
+27                 .canvas.render()
+28         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.7 캔버스와 렌더링 엔진 연동 부분
+----------------------------------------------------------------------------------------
+01 /*
+02  * UICanvas는 출력 버퍼를 설정하고 장면 그래프(Scene-Graph) 기반으로
+03  * UI 객체의 동작을 제어한다.
+04 */
+05 UICanvas:
+06     RenderEngine engine // 캔버스에 연동된 렌더링 백엔드 엔진
+07     ...
+08 
+09     /*
+10      * 렌더링 백엔드 설정. 윈도는 출력 버퍼에 필요한 정보를 제공하고
+11      * 이를 토대로 캔버스의 출력 버퍼를 생성한다.
+12      * @p client: NativeWindow
+13     */
+14     setup(client, ...):
+15         // 캔버스가 이용할 렌더링 백엔드 생성. 기본값으로 software를 명시
+16         .engine = RenderEngine.load("software")
+17         .engine.setup(client, .width, .height, ...)
+18         ...
+19 
+20     /* 캔버스 크기 조정 */
+21     size(w, h):
+22         .engine.size(w, h)
+23         .width = w
+24         .height = h
+25         ...
+26         updated = true       // 캔버스가 변경되었다는 상태 설정
+27 
+28     /* 렌더링 수행 */
+29     render():
+30         ...
+31         .engine.flush()      // 렌더링 엔진에 출력 요청
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.8 렌더링 엔진 출력 버퍼 구현부
+----------------------------------------------------------------------------------------
+01 /* 이하 SW 렌더링 백엔드 엔진 */
+02 SwEngine implements RenderEngine:
+03     EngineContext:
+04         WindowClient client     // 클라이언트 윈도. UIWindow와 공유
+05         WindowDisplay display   // 출력 장치 정보
+06         NativeSurface surface   // 서피스 매핑 정보
+07         NativeBuffer buffers[]  // 캔버스 출력 버퍼
+08         var bufferIdx           // 현재 출력 중인 버퍼 번호
+09     EngineContext curCtx        // 현재 렌더링 엔진 문맥 정보
+10     EngineContext prvCtx        // 이전 렌더링 엔진 문맥 정보(백업용)
+11
+12     override setup(client, ...):
+13         /* 기존 렌더링 문맥 정보 보관. 현 시점에는 화면 출력에 쓰이고 있을 수
+14            있으므로 당장 리소스를 제거하지 않고 다음 프레임에 이를 수행 */
+15         .prvCtx = curCtx
+16
+17         /* 새 렌더링 문맥 정보 설정. 문맥 정보의 구체적인 사항은 임의로
+18            작성하였으며 여기선 중요하지 않다. */
+19         .ctx.client = client
+20         .ctx.display = client.display   // 출력 장치 정보 요청
+21         .ctx.surface = client.surface   // 매핑 정보 요청
+22         .ctx.bufferIdx = 0              // 현재 출력 버퍼 번호
+23         .ctx.bufferCnt = 3              // 사용할 출력 버퍼 수
+24         ...
+25         size(client.width, client.height)
+26 
+27     /* 지정한 크기의 출력 버퍼 생성(서피스에 종속) */
+28     override size(w, h):
+29         ...
+30         // 트리플 버퍼 생성
+31         for .idx : bufferCnt
+32             .ctx.buffers[idx] = NativeBuffer(w, h, RGBA32, IPC_PRIVATE, IO_WRITE + IO_READ ...)
+33             .ctx.bufferIdx = 0;
+34         // 출력 버퍼 매핑
+35         .ctx.surface.map(.ctx.buffers[.ctx.bufferIdx])
+36 
+37     /* 컴포지터로 클라이언트 화면 출력 요청
+38        신호를 받은 컴포지터는 매핑된 출력 버퍼를 이미지로 활용 */
+39     override flush():
+40         .ctx.surface.map(.buffers[bufferIdx])
+41         .client.commit(.ctx.bufferIdx, WindowClient.CommitAsync)
+42         .ctx.bufferIdx++
+43         if .ctx.bufferIdx >= .ctx.bufferCnt
+44             .ctx.bufferIdx = 0
+45         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.9 가상 메서드 테이블 동작 원리 구현 예
+----------------------------------------------------------------------------------------
+01 UIObject:
+02     /* 컴파일 시점에 vtable 내장 변수 추가.
+03        이때 update 인터페이스를 vtable[0]로 지정한다. */
+04     Address vtable[]
+05     ...
+06 
+07     /* 객체 상태 갱신 동작 정의 */
+08     update():
+09         ...
+10
+11     constructor():
+12         /* 컴파일러는 객체 생성 단계에 vtable[0]에 UIObject.update 주소를
+13            기록하는 코드를 생성할 수 있다. */
+14         .vtable[0] = self.update
+15         ...
+16 
+17 /* UIObject를 확장한 새로운 객체 정의 */
+18 UICustomObject extends UIObject
+19     /* 컴파일 시점에 vtable 내장 변수 추가.
+20     이때 update 인터페이스를 vtable[0]로 지정한다. */
+21     Address vtable[]
+22     ...
+23
+24     override update():
+25         ...
+26 
+27     constructor():
+28         /* 컴파일러는 객체 생성 시점에 vtable[0]에 UICustomObject.update 주소 
+29            기록 */
+30         .vtable[0] = self.update
+31         ...
+32 
+33 /* 어떤 수행 코드 */
+34 func():
+35     /* UICustomObject을 생성함으로써 vtable[0]은 UICustomObject.update를 
+36        가리킨다. */
+37     UIObject obj = UICustomObject()
+38     ...
+39     /* obj.update()를 UICanvas 내부에서 호출한다고 가정한다. 이때 해당
+40        코드는 컴파일 시점에 obj.vtable[0]()로 대처할 수 있다. 결과적으로
+41        이는 UICustomObject.update()를 호출한다. */
+42     obj.update()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.10 UIObject 트리 기능 구축
+----------------------------------------------------------------------------------------
+01 /* UIObject는 UIComponent의 기저 클래스. UI 객체의 공통 특성을 구현. */
+02 UIObject:
+03     UIObject parent = invalid
+04     UIObject children[]
+05    ...
+06
+07     /*
+08      * UIObject 생성자
+09      * @p name: string
+10      * @p parent: UIObject
+11     */
+12     constructor(name, parent, ...):
+13         .name = name
+14         if .parent.valid()
+15             // 주어진 부모와 현재 객체를 자식으로 연결
+16             .attach(parent)
+17         ...
+18 
+19     /* UIObject 파괴자 */
+20     destructor():
+21         // 자식과 연결 해제
+22         for child : .children
+23             child.attach(invalid)
+24         // 부모와 연결 해제
+25         .attach(invalid)
+26
+27     /*
+28      * 부모 지정. 주어진 부모가 invalid 할 경우 현재 객체는 트리에서
+29      * 제외되는(dangling) 점을 유념한다.
+30      * @p parent: UIObject
+31     */
+32     attach(parent):
+33         // 동일 부모
+34         return if .parent == parent
+35 
+36         // 기존 부모로부터 현재 객체 제거
+37         if .parent.valid()
+38             .parent.removeChild(self)
+39             .parent.unref()              // 참조 수 감소
+40
+41         // 새로운 부모가 유효하지 않을 수도 있다.
+42         if parent.vaild()
+43             parent.addChild(self)
+44             parent.ref()                 // 참조 수 증가
+45 
+46         .parent = parent
+47
+48 // 개발 단계에서만 동작. 최상단 노드(root)를 찾고 트리 탐색 시도.
+49 #if DEVEL_MODE
+50     root = parent
+51     while root.valid()
+52         break if root.parent.invalid()
+53         root = root.parent
+54     findCircularRef(root, self, 0, 0)
+55 #endif
+56
+57     /*
+58      * 자식 객체 추가. 주어진 자식이 invalid인 경우는 허용하지 않는다.
+59      * @p child: UIObject
+60     */
+61     addChild(child):
+62         .children.add(child)
+63         child.ref()                      // 참조 수 증가
+64
+65     /*
+66      * 자식 객체 제거
+67      * @p child: UIObject
+68      */
+69     removeChild(child):
+70         .children.remove(child)
+71         child.unref()     // 참조 수 감소
+72
+73 /* 깊이 우선 순위 탐색 시도, 타깃이 두 번 이상 발생했거나 무한 루프에 빠졌는지 검증 */
+74 findCircularRef(obj, target, depth, foundCnt):
+75     // 순환 참조 발생 간주. 오류 메시지 등 필요 조치를 취한다.
+76     if depth > MAX_DEPTH
+77         ...
+78         return if obj.invalid()
+79 
+80     if obj == target
+81         ++foundCnt
+82         // 순환 참조 발생. 오류 메시지 등 필요 조치를 취한다.
+83         if foundCnt > 1
+84             ...
+85
+86     // 자식에 대해서 탐색 시도
+87     for child : obj.children
+88        findCircularRef(child, target, depth + 1, foundCnt)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.11 로깅을 통한 디버깅 정보 제공
+----------------------------------------------------------------------------------------
+01 /* 어떤 함수 내지 메서드에서 UIObject를 인자로 요구 */
+02 func(obj):
+03     // 본 객체는 정상적인 UIObject가 아니다.
+04     if obj.tag not 0xF3E68A08
+05 #if DEVEL_MODE // 개발 단계에서만 동작
+06         // 시스템에서 제공하는 메시지 출력 기능
+07         System.printError("This object(%p) is invalid!", obj)
+08         abort()
+09 #endif
+10         return
+11     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.12 로깅 시스템 활용 예시
+----------------------------------------------------------------------------------------
+01 /*
+02  * UIButton에 아이콘 객체 설정
+03  * @p obj: UIIcon
+04  */
+05 UIButton.icon(obj):
+06     return if obj.valid() == false
+07     ...
+08
+09 /* 주어진 객체가 UIIcon 클래스인지 확인. UIIcon은 UIImage를 상속받는다. */
+10 UIIcon.valid():
+11     // 부모 클래스에 대해서 검증 수행
+12     return false if super() == false
+13
+14     // UI_ICON_CLASS_TAG는 Icon 클래스를 식별할 수 있는 고유 값 지칭
+15     return true if .tag == UI_ICON_CLASS_TAG
+16
+17     // UI 로깅 기능을 구축하고 이를 활용
+18     UISystemLog.print(UISystemLog.Critical, "This object(%p) is not
+                         UIIcon class! (expected = %d, current = %d)",
+                         self, UI_ICON_CLASS_TAG, .tag)
+19
+20    return false
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.13 UIObject 유효성 검증
+----------------------------------------------------------------------------------------
+01 /* UIObject는 UIComponent의 기저 클래스. UI 객체의 공통 특성을 구현. */
+02 UIObject:
+03     // 이하 멤버 변수 설명은 "객체 모델"절 참고
+04     var tag = UI_OBJECT_CLASS_TAG
+05     string name = "noname"
+06     /* 삭제된 객체인지 여부 확인. 로깅에서 어떻게 참조하는지가 중요하며
+07        용도는 당장 중요하지 않다(2.3.1절 참고) */
+08     bool invalid = false
+09     ...
+10
+11     /* UIObject 파괴자 */
+12     destructor():
+13         ...
+14         // 더 이상 유효하지 않은 객체이므로 꼬리표를 삭제
+15         .tag = 0x00000000
+16
+17     /* 객체가 UIObject로서 유효한지 검증 */
+18     valid():
+19         // 명시적으로 삭제를 요청받았으나 아직 참조되고 있는 상황
+20         if .invalid
+21             UISystemLog.print(UISystemLog.Critical, "This object(%p) is 
+                                 already deleted! (Type = %s)", self, .name)
+22             return false
+23
+24         return verifyTag()
+25 
+26     /* valid()의 역에 해당. 편의를 위해 제공. */
+27     invalid():
+28         // toggle()은 true -> false, false -> true로 변환 수행
+29         return (.valid().toggle())
+30
+31     /* 태그 검증 */
+32     verifyTag():
+33         // UI_OBJECT_CLASS_TAG == 0xF3E68A08
+34         return true if .tag == UI_OBJECT_CLASS_TAG
+35
+36         UISystemLog.print(UISystemLog.Critical, "This object(%p) is not
+                             UIObject class! (expected = %d, current = %d)",
+                             self, UI_OBJECT_CLASS_TAG, .tag)
+37         return false
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.14 UICanvas 주요 로직
+----------------------------------------------------------------------------------------
+01 UICanvas:
+02     ...
+03     UIObject objs[]             // 생성한 UI 객체 전체 목록
+04     UIObject renderObjs[]       // 렌더링 객체 목록
+05     UIObject occludingObjs[]    // 차폐 객체 목록
+06     bool dirty                  // 캔버스 변화 발생 여부
+07
+08     /* 캔버스에 등록한 UI 객체를 대상으로 상태 갱신 수행 */
+09     update():
+10         dirty = false // 반환값 (코드 2.6 참고)
+11
+12         .renderObjs.clear() // 렌더링 객체 목록 초기화
+13         .occludingObjs.clear() // 차폐 객체 목록 초기화
+14
+15         // 렌더링 객체와 가려진 객체들 취합하고 부분 렌더링 영역 계산
+16         for obj : .objs
+17             // 객체 업데이트 후 렌더링 객체 등록
+18             if obj.update()
+19                 renderObjs.push(obj)
+20                 dirty = true
+21
+22         // 렌더링 백엔드에서 필요한 작업 수행...
+23         if dirty
+24             .engine.update()
+25 
+26         return dirty
+27 
+28     /* 렌더링 작업 수행 */
+29     render():
+30         ...
+31         // 렌더링 객체를 대상으로 엔진이 보유한 출력 버퍼에 UI 드로잉 수행
+32         for obj : .renderObjs
+33             obj.render(.engine, ...)
+34         ...
+35         .engine.flush() // 렌더링 엔진에 출력 요청(코드 2.8 참고)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.15 객체 변경 사항 추적 및 반영
+----------------------------------------------------------------------------------------
+01 /* 객체 기하 정보 설정 */
+02 UIObject:
+03     ...
+04     /* 기하 정보 변경 */
+05     geometry(geometry):
+06         // 값이 동일한 경우 생략
+07         return if .geometry == geometry
+08         .geometry = geometry
+09         /* 변경 사항을 세부적으로 추적하기 위해서는 속성별로 changed 값을 
+10            따로 분리할 수 있다. */
+11         .changed = true
+12
+13     /* 객체 상태 갱신 */
+14     update():
+15         // 유효하지 않은 객체는 수행 중단
+16         return false if .invalid
+17 
+18         /* 명시적으로 가시 상태가 아니거나 객체 비주얼이 완전 투명한 경우
+19            렌더링을 수행하지 않는다. */
+20         return false if .visible == false or .opacity == 0
+21 
+22         // 본 객체를 차폐물로 등록
+23         if self.occluding()
+24             .canvas.addOccluder(self)
+25
+26         // 변경 사항이 없으므로 렌더링을 수행하지 않는다.
+27         return false if .changed == false
+28 
+29         // 객체 속성 갱신 작업 수행
+30         ...
+31         return true
+32
+33     /* 객체가 차폐물로서 유효한지 여부 확인. 파생 클래스의 경우 본
+34        메서드를 오버라이딩(overriding) 후 조건을 추가하여 정확도를
+35        높이거나 복잡한 차폐 연산을 생략할 수 있다. */
+36     occluding():
+37         return false if .visible == false
+38         return false if .opacity < 100
+39         return false if .geometry.size == 0
+40         ...
+41         return true
+42
+43     /* 객체 렌더링 수행 */
+44     render(engine):
+45         // 유효하지 않은 객체는 렌더링 중단
+46         return if .invalid
+47
+48         // 다른 객체에 의해 가려진 경우 렌더링 생략
+49         return if .canvas.occluded(self)
+50 
+51         // 래스터 작업 수행
+52         ...
+53         .changed = false // 화면에 반영 완료했으므로 상태 초기화
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.16 객체 차폐 여부 파악
+----------------------------------------------------------------------------------------
+01 /* 차폐 여부 확인. Geometry는 최소 바운딩 박스에 해당. */
+02 UICanvas.occluded(obj):
+03
+04     /* GeometryCollection은 기하 도형 목록으로부터 하나의 큰 기하 도형을
+05        구성. Geometry와 차폐 도형의 영역이 겹칠 경우 크기가 작은
+06     Geometry로 영역을 재구성함으로써 다각형 구현(그림 2.29) */
+07     geometry = GeometryCollection(obj.geometry)
+08 
+09     // 주어진 기하 정보(geometry)와 모든 차폐 객체들의 기하 정보와 교차 여부 비교
+10     for occluder : .occludingObjs
+11         continue if obj == occluder
+12         /* 주어진 기하 정보가 차폐 객체의 기하 정보 외부에 있는 경우
+13            즉, 겹치는 구간이 없는 경우에 해당 */
+14         continue if geometry.outside(occluder.geometry)
+15         /* 차집합 도출. 교차된 정보가 없는 경우는 주어진 기하 정보가
+16            차폐 객체의 기하 내부에 존재한 경우. 즉 완전 차폐. */
+17         return true if geometry.subtract(occluder.geometry) == false
+18         /* 차집합 결과의 기하 정보 넓이가 0인 경우 */
+19         return true if geometry.areaSize == 0
+20
+21     // 부분 차폐 또는 차폐가 전혀 안된 경우에 해당
+22     return false
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.17 계층 모델에서의 UICanvas 갱신 작업
+----------------------------------------------------------------------------------------
+01 /* 캔버스에 등록한 UI 객체를 대상으로 상태 갱신 수행(계층 모델 ver.) */
+02 UICanvas.update():
+03     dirty = false // 반환값(코드 2.6 참고)
+04
+05     // 객체를 업데이트 후 렌더링 객체 취합
+06     for obj : .objs
+07         // 너비 우선 순위 탐색을 위한 큐 자료 구조
+08         Queue queue
+09         queue.push(obj)
+10
+11         // 너비 우선 순위 탐색 시작
+12         while queue.exist()
+13             obj = queue.pop()
+14             // 객체를 렌더링 후보 목록에 추가
+15             if obj.update()
+16                 renderObjs.push(obj)
+17                 dirty = true
+18                 // 계층 모델에서 자식들을 갱신하기 위해 자식들을 큐에 추가
+19                 for child : obj.children
+20                     queue.push(child)
+21     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.18 레이어 지정 인터페이스
+----------------------------------------------------------------------------------------
+01 obj.layer = 3       // obj의 레이어 순서를 세 번째로 지정
+02 obj.above = obj2    // obj를 obj2 바로 위로 이동
+03 obj.below = obj2    // obj를 obj2 바로 밑으로 이동
+04 obj.raise()         // obj의 레이어 한 칸 상승
+05 obj.lower()         // obj의 레이어 한 칸 하강
+06 obj.top()           // obj를 최상단으로 지정
+07 obj.bottom()        // obj를 최하단으로 지정
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.19 레이어 기준으로 정렬 수행
+----------------------------------------------------------------------------------------
+01 /*
+02  * 레이어 순서 변경
+03  * @p layer: var
+04 */
+05 UIObject.layer(layer):
+06 
+07     .layer = layer
+08
+09     // 본 객체가 부모에 종속된 경우, 그 형제들과 레이어 순서 재정렬
+10     if .parent.valid()
+11         children = .parent.children
+12         // layer 값 기준으로 children 재정렬(17행~26행 참고)
+13         ...
+14     // 루트 객체인 경우 캔버스의 루트 객체들과 레이어 순서 재정렬
+15     else
+16         objs = UIEngine.canvas.objs
+17         // 삽입 정렬(Insertion Sort) 수행
+18         for i : objs.size[1 ~ ]
+19             j = i
+20             while j > 0
+21                 if objs[j].layer < objs[j – 1].layer
+22                     swap(objs[j], objs[j – 1])
+23                     --j
+24                     continue
+25                 else
+26                     break
+27     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.20 장면 그래프 기반 렌더링
+----------------------------------------------------------------------------------------
+01 /* 객체 렌더링에 필요한 공용 정보 정의 */
+02 RenderContext:
+03     RenderEngine engine // 렌더링 백엔드 엔진
+04     NativeBuffer target // 출력 버퍼
+05     Geometry viewport   // 출력 영역
+06     Matrix transform    // 기하 변환
+07     ...                 // 그 외 여러 정보...
+08
+09     RenderContext(engine):
+10         self.engine = engine
+11         self.target = engine.target
+12         viewport = {0, 0, engine.width, engine.height}
+13         transform.identity()
+14         ...
+15
+16 /*
+17  * 객체 렌더링 작업 수행
+18  * @p context: RenderContext
+19 */
+20 UIObject.render(context, ...):
+21     ...
+22     // 뷰포트에서 벗어난 경우
+23     return if .geometry.outside(context.viewport)
+24
+25     // 다른 객체에 의해 차폐된 경우 렌더링 생략
+26     return if .canvas.occluded(self)
+27     ...
+28     // 부모의 렌더링 문맥 계승
+29     overriddenContext = context
+30     // 부모와 자식의 변환 행렬 곱
+31     overridenContext.transform *= .transform
+32     // 부모와 자식의 클리핑(3.4.2절) 영역 교집합
+33     overridenContext.viewport.intersect(.geometry)
+34     // 부모와 자식의 색상 합성
+35     overridenContext.fill *= .fill
+36 
+37     // 본 객체가 보유한 비주얼 요소 출력
+38     inRender(overridenContext)
+39
+40     // 장면 그래프를 완성하기 위해 렌더링 문맥을 자식들에게도 전달
+41     foreach(.children, child)
+42         child.render(overridenContext, ...)
+43     ...
+44
+45 /* 캔버스 렌더링 작업 수행 */
+46 UICanvas.render():
+47     ...
+48     // 렌더링 객체를 대상으로 엔진이 보유한 출력 버퍼에 UI 드로잉 수행
+49     context = RenderContext(engine)
+50
+51     for obj : .renderObjs
+52         obj.render(context, ...)
+53     ...
+54     .engine.flush() // 렌더링 엔진에 출력 요청(코드 2.8 참고)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.21 파생 객체(UIRect)의 렌더링 수행
+----------------------------------------------------------------------------------------
+01 /*
+02  * UIObject를 확장한 사각형 객체의 렌더링 수행 코드
+03  * @p context: RenderContext
+04 */
+05 override UIRect.inRender(context, ...):
+06     ...
+07     // 사각형을 출력하는 알고리즘 구현(코드 3.6 참고)
+08     context.engine.drawRect(...)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.22 객체 변경 사항 추적 및 반영
+----------------------------------------------------------------------------------------
+01 UIObject:
+02     ...
+03     Geometry curGeometry // 현재 프레임의 기하 정보
+04     Geometry prvGeometry // 이전 프레임의 기하 정보
+05     ...
+06
+07     /* 객체 기하 정보 설정 */
+08     geometry(geometry):
+09         return if .curGeometry == geometry
+10         .curGeometry = geometry
+11         .changed = true
+12
+13     /* 객체 상태 갱신 */
+14     update(engine, ...):
+15         // 객체 속성 갱신 작업 수행
+16         ...
+17         // 이전, 현재 기하 정보를 이용하여 부분 렌더링 영역 추가
+18         engine.pushRedrawRegion(.prvGeometry)
+19         engine.pushRedrawRegion(.curGeometry)
+20
+21         // 현재 프레임의 기하 정보를 이전 프레임의 기하 정보로 복사
+22         .prvGeometry = .curGeometry
+23         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.23 부분 렌더링 영역 병합
+----------------------------------------------------------------------------------------
+01 /* 렌더링 엔진에서 필요한 작업 수행. 호출 위치는 코드 2.14의 24행 참고 */
+02 RenderEngine.update():
+03     ...
+04     /* 병합 작업 수행. pushRedrawRegion()으로 수집한 기하 정보는
+05        redrawRegions 리스트로 보관한다. 여기서는 redrawRegions를 순회하며
+06        수집한 영역을 병합한다. 최종 확정한 redrawRegions 목록의 영역은
+07        부분 렌더링 영역으로 활용한다. */
+08     // 범위: 0 ~ redrawRegion.size - 2
+09     for region1 : redrawRegions[0 ~ (redrawRegions.size - 1)]
+10         // 범위: 1 ~ redrawRegion.size - 1
+11         for region2 : redrawRegions[1 ~ ]
+12             // region2 - region1 후, 차집합에 해당하는 region 목록 반환
+13             partitions = region1.merge(region2)
+14             if partitions.size > 0
+15                 /* 병합한 영역 제거. 반복문을 수행 중이므로 반복문(for)
+16                     문맥을 훼손하지 않고 안전하게 제거하는 방법이 필요할 수 있다. */
+17                 redrawRegions.remove(region2)
+18                 // 새로 분할된 사각형 목록을 redrawRegions 목록에 추가
+19                 redrawRegions.append(partitions)
+20     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.24 부분 렌더링 주요 수행 로직
+----------------------------------------------------------------------------------------
+01 /* 캔버스에 등록한 UI 객체를 대상으로 상태 갱신 수행 */
+02 UICanvas.update():
+03     dirty = false
+04
+05     .renderObjs.clear()     // 렌더링 객체 목록 초기화
+06     .occludingObjs.clear()  // 차폐 객체 목록 초기화
+07 
+08     // 렌더링 객체와 차폐 객체 취합하고 부분 렌더링 영역 계산
+09     for obj : .objs
+10         // 객체를 렌더링 후보 목록에 추가
+11         if obj.update()
+12             renderObjs.push(obj)
+13         // 객체 중 하나라도 변경이 있을 시 캔버스 갱신
+14         if obj.changed
+15             dirty = true
+16
+17     // 영역 병합 등 렌더링 백엔드에서 필요한 작업 수행...
+18     if dirty
+19         .engine.update()
+20 
+21     return dirty
+22 
+23 /* 객체 상태 갱신 */
+24 UIObject.update():
+25     ...
+26     // 본 객체를 차폐물로 등록
+27     if self.occluding()
+28         .canvas.addOccluder(self)
+29 
+30     // 객체 속성에 변경이 없는 경우 즉시 반환
+31     return true if .changed == false
+32
+33     // 객체 속성 갱신 작업 수행
+34     ...
+35 
+36     // 이전, 현재 기하 정보를 이용하여 부분 렌더링 영역 추가
+37     engine.pushRedrawRegion(.prvGeometry)
+38     engine.pushRedrawRegion(.curGeometry)
+39
+40     // 현재 프레임의 기하 정보를 이전 프레임의 기하 정보로 복사
+41     .prvGeometry = .curGeometry
+42     ...
+43
+44 /*
+45  * 객체 렌더링 작업 수행
+46  * @p context: RenderContext
+47 */
+48 UIObject.render(context, ...):
+49     ...
+50     // 부분 렌더링 영역에 노출되지 않은 경우 렌더링 생략
+51     redraw = false
+52     for region : context.engine.redrawRegions
+53         continue if .geometry.outside(region)
+54         redraw = true
+55         break
+56 
+57     return if redraw == false
+58 
+59     // 다른 객체에 완전히 가려진 경우
+60     return if .canvas.occluded(self)
+61     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.25 GC 참조 수 구현
+----------------------------------------------------------------------------------------
+01 /* UIObject는 UIComponent의 기저 클래스. UI 객체의 공통 특성을 구현 */
+02 UIObject:
+03     ...
+04     referenceCnt = 0    //객체 참조 수
+05     /* 참조 수 증가. 이는 객체를 생성하거나 obj = obj2와 같이 객체
+06        참조 복사가 발생할 때 호출된다고 가정.
+07        필요 시 연산자 오버라이딩을 구현하여 완성할 수 있다.*/
+08     ref():
+09         return if .invalid()
+10         ++.referenceCnt
+11 
+12     /* 참조 수 감수. obj = invalid 호출처럼 객체를 명시적으로 해제하거나
+13        수행 스코프(scope) 또는 함수 스택이 종료함으로써 객체를 해제할 때 호출 */
+14     unref():
+15         // 유효 객체인지 확인
+16         return if verifyTag() == false
+17 
+18         if .referenceCnt > 0
+19             --.referenceCnt
+20 
+21         // 참조가 존재하지 않으면 객체 파괴
+22         if .referenceCnt == 0
+23             destructor()
+24
+25     /* UIObject 파괴자 */
+26     destructor():
+27         ...
+28         // 외부 어디선가 참조되고 있으므로 파괴하지 않고 무효 상태로 변경
+29         if .referenceCnt > 0
+30             .invalid = true
+31             return
+32 
+33         ... // 추가 리소스 정리
+34 
+35         // 꼬리표 삭제 후 Memory Management Unit(MMU)을 통한 메모리 반환
+36         obj.tag = 0x00000000
+37         UISystemMMU.deallocate(self)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.26 객체 트리 참조를 고려한 객체 파괴 과정
+----------------------------------------------------------------------------------------
+01 UIObject:
+02     ...
+03
+04     /* UIObject 파괴자 */
+05     destructor():
+06         // 연쇄 파괴로 인한 중복 호출 방지
+07         if return if .invalid
+08         .invalid = true             // 무효 상태 변경
+09 
+10         // 보유한 자식 참조 수 감소, 0에 도달 시 자식들 연쇄 파괴 발생
+11         for child : .children
+12             child.attach(invalid)   // 코드 2.10 참고
+13         children.clear()
+14 
+15         attach(invalid)             // 부모 연결 해제(코드 2.10 참고)
+16 
+17         ... // 추가 리소스 정리
+18 
+19         // 메모리를 해제하는 대신 파괴한 객체 수집
+20         UIObjectCollector.push(self)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.27 쓰레기 수집 및 폐기 처분 과정
+----------------------------------------------------------------------------------------
+01 /* 가비지 컬렉터 */
+02 UIObjectCollector:
+03     UIObjects Objs[] // 수집한 객체를 보관할 배열(i.e Array<UIObject>)
+04     var collectedNum = 0 // 수집한 객체 수
+05     ...
+06
+07     /* 가비지 객체 수집 */
+08     push(obj):
+09         // 배열에 데이터가 가득 찼을 때 배열 크기 조정(생략)
+10         ...
+11         // 배열 끝에 수집할 객체 추가
+12         objs[collectedNum - 1] = obj
+13         ++collectedNum
+14 
+15     /* 메모리 정리 수행 */
+16     purge():
+17         // 폐기 처분할 객체를 찾고 메모리를 파괴한다.
+18         for idx : collectedNum
+19             obj = objs[idx]
+20             if obj.chlidReferenceCnt == 0 and obj.referenceCnt == 0
+21                 // 태그 값 정리 후 Memory Management Unit(MMU)을 통한 메모리 반환
+22                 obj.tag = 0x00000000
+23                 UISystemMMU.deallocate(obj)
+24                 // 배열의 빈 슬롯(slot)을 마지막 쓰레기 객체로 대체
+25                 objs[idx] = objs[collectedNum - 1]
+26                 objs[collectedNum - 1] = invalid
+27                 --collectedNum
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.28 GC 메모리 정리 호출
+----------------------------------------------------------------------------------------
+01 // 메인 루프 가동(코드 2.6 참고)
+02 UIEngine.run():
+03     while running
+04         ...
+05         // 캔버스 갱신 후 렌더링 수행
+06         if .canvas.update()
+07             .canvas.render()
+08 
+09         // 일정 시간 경과했다면 UIObjectCollector.purge() 호출
+10         if (UIEngine.loopTime - lastGCPurgeTime) > GC_PURGE_TIME
+11             UIObjectCollector.purge()
+12             lastGCPurgeTime = UIEngine.loopTime
+13     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 2.29 GC 후 객체 재사용을 위한 추가 로직
+----------------------------------------------------------------------------------------
+01 /* 가비지 컬렉터 */
+02 UIObjectCollector:
+03     ...
+04     // 이름(키)과 UIObject[](데이터)를 쌍으로 갖는 맵(Map) 자료 구조
+05     Map purges[string] = UIObject[]
+06 
+07     /* 메모리 정리 수행 */
+08     purge():
+09         // 폐기 처분할 객체를 찾고 메모리를 파괴한다.
+10         for idx : collectedNum
+11             obj = objs[idx]
+12             if obj.referenceCnt == 0
+13                 // 배열의 빈 슬롯(slot)을 마지막 쓰레기 객체로 대체
+14                 objs[idx] = objs[collectedNum - 1]
+15                 --collectedNum
+16                 // 폐기처분 객체 목록에 추가. 재사용 가능성이 없는 매우 독특한
+17                 // 유형의 객체를 위해 선별적으로 결정한다.
+18                 if obj.allowRecycle
+19                     stack = purges[obj.name]
+20                     stack.push(obj)
+21                 else
+22                     obj.tag = 0x00000000
+23                     UISystemMMU.deallocate(obj)
+24
+25     /*
+26     * 재사용할 객체 회수
+27     * @p name: string
+28     */
+29     retrieve(name):
+30         stack = purges[name]
+31         if stack.invalid
+32             return invalid // 재사용할 객체 없음!
+33         obj = stack.pop()
+34             return obj
+----------------------------------------------------------------------------------------

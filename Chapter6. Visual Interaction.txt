@@ -1,0 +1,970 @@
+# UI System Blackbook Code by 박춘언 (hermetpark@gmail.com)
+
+
+@코드 6.1 프레임 애니메이션 구현
+----------------------------------------------------------------------------------------
+01 // 10개의 장면으로 구성된 애니메이션 구현
+02 frameAnimation():
+03     // 장면 1 준비
+04     img1 = UIImage():
+05         .path = "frame0.jpg"
+06         .geometry = {x, y, w, h}
+07 
+08     // 첫 번째 장면을 화면에 그리기 위해 출력 영역 설정
+09     invalidateArea(x, y, w, h)
+10
+11     // 화면 갱신 요청
+12     drawScreen()
+13 
+14     // 장면 2 준비
+15     img2 = UIImage():
+16         .path = "frame1.jpg"
+17         .geometry = {x, y, w, h}
+18
+19     // 두 번째 장면을 그리기 위해 출력 영역을 다시 설정
+20     invalidateArea(x, y, w, h)
+21 
+22     // 화면 갱신 요청
+23     drawScreen()
+24 
+25     // 동일하게 열 번째 장면까지 반복 작업 수행
+26     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.2 이벤트 리스너 구조의 애니메이션 구현
+----------------------------------------------------------------------------------------
+01 /* 10장의 장면으로 구성된 애니메이션을 구현. 본 예제에서는 리테인드
+02    렌더링 구조를 따르며 앱은 애니메이션 콜백 함수를 등록하고 콜백
+03    함수에서 장면을 구축한다. */
+04 frameAnimation():
+05     /* 애니메이션 객체 생성. UIAnimation은 UIEngine으로부터 프레임마다
+06        이벤트 신호를 받고 tick()을 호출 */
+07     animation = UIAnimation()
+08
+09     /* 애니메이션 콜백 함수 구현
+10        현재 프레임에 해당하는 장면을 준비.
+11        img 객체는 초기화되어 있다고 가정 */
+12     tick():
+13         // 새로운 장면 이미지로 교체
+14         img.path = "frame" + frame + ".jpg"     // path = "frame0.jpg"
+15         ++frame                                 // 다음 프레임 번호 결정 (frame1)
+16 
+17     animation.EventUpdated += {tick, ...}
+18
+19     // 애니메이션 가동
+20     animation.play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.3 AnimationCore와 UIAnimation의 연동
+----------------------------------------------------------------------------------------
+01 /* UIAnimation은 AnimationCore에 자신의 인스턴스를 등록
+02    AnimationCore는 리스트 데이터 구조를 이용하여 등록된 애니메이션
+03    인스턴스를 관리할 수 있다 */
+04 UIAnimation.constructor():
+05     AnimationCore.register(self)
+06
+07 // UIAnimation은 AnimationCore로부터 자신의 인스턴스를 해제
+08 UIAnimation.destructor():
+09     AnimationCore.unregister(self)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.4 GIF 애니메이션 호출
+----------------------------------------------------------------------------------------
+01 // UIAnimatedImage는 애니메이션 재생 가능한 이미지 기능 출력 기능 앱에 제공
+02 img = UIAnimatedImage():
+03     .path = "sample.gif" // GIF 파일을 불러온다
+04     .geometry = {x, y, w, h}
+05     .play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.5 GIF 애니메이션 재생부
+----------------------------------------------------------------------------------------
+01 /* 이미지 애니메이션 재생 */
+02 UIAnimatedImage.play():
+03     // 애니메이션 생성
+04     .animation = UIAnimation()
+05
+06     /* 애니메이션 구현 함수 구현
+07        animation은 UIAnimation 자신을,
+08        target은 호출한 UIAnimatedImage 객체를 가리킨다 */
+09     tick(animation, target):
+10         /* 프레임 번호 결정.
+11            단, 애니메이션 재생 시간(duration)을 고려하지 않았다! */
+12         ++target.frame
+13         // 프레임 번호가 끝에 도달하면 애니메이션 종료
+14         if target.frame == target.maxFrame
+15             animation.finish()
+16 
+17     .animation.EventUpdated += {tick, self}
+18     .animation.play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.6 시간 계산(리눅스)
+----------------------------------------------------------------------------------------
+01 /* Linux clock_gettime()을 이용한 시간 확인(C 언어).
+02    UIEngine은 시간을 확인하기 위해 time()을 호출한다고 가정 */
+03 #include <time.h>
+04
+05 double time()
+06 {
+07     struct timespec ts;
+08     double seconds;
+09
+10     // 실시간 시간 정보를 ts에 기록
+11     clock_gettime(CLOCK_REALTIME, &ts);
+12
+13     /* ts에 기록된 시간을 초 단위로 환산
+14        Nanoseconds -> Microseconds -> Milliseconds -> Seconds */
+15     seconds = ts.tv_sec + (ts.tv_nsec / 1000000000L);
+16 
+17     return seconds;
+18 }
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.7 지정 시간 동안 애니메이션 재생
+----------------------------------------------------------------------------------------
+01 UIAnimatedImage.play():
+02     // UIAnimation()에 전달한 duration을 통해 애니메이션 수행 시간을 지정
+03     // duration의 값은 3()으로 가정
+04     .animation = UIAnimation(.duration)
+05
+06     /* tick()은 3초간 호출되며 progress는 0 ~ 1사이 정규값
+07        0은 애니메이션 시작 시점, 1은 애니메이션 종료 시점 */
+08     tick(animation, target, progress):
+09         target.frame = target.maxFrame * progress // 다음 프레임 번호
+10
+11     /* progress가 1에 도달할 때 UIAnimation을 종료시키면 되므로
+12     다음 로직은 더 이상 필요 없다 */
+13     // if target.farme == target.maxFrame
+14     // animation.finish()
+15
+16     .animation.EventUpdated += {tick, self}
+17 
+18     // play()는 루프 타임을 이용하여 시작 시간을 기록한다고 가정
+19     .animation.play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.8 UIAnimation 갱신 과정
+----------------------------------------------------------------------------------------
+01 /* 메인 루프 가동 */
+02 UIEngine.run():
+03     ...
+04     while running == true
+05         // 0. 루프 타임 기록(코드 6.6 참고)
+06         .loopTime = time()
+07         // 1. 이벤트 대기
+08         waitForEvents()
+09         // 2. 이벤트 처리
+10         processEvents()
+11         ...
+12 
+13 /* 이벤트 처리 */
+14 UIEngine.processEvents():
+15     ...
+16     AnimationCore.update(.loopTime)
+17     ...
+18 
+19 /* 현재 유효한 모든 애니메이션 갱신 */
+20 AnimationCore.update(loopTime):
+21     /* UIAnimation 갱신. 여기서 적용한 시간은 루프 타임에 해당한다.
+22        만약 루프 타임을 적용하지 않고 각 애니메이션마다 개별적으로
+23        시간을 구한다면 애니메이션 결과는 달라질 수 있다. */
+24     for animation : .animations
+25         animation.update(loopTime)
+26 
+27         // 애니메이션이 종료되거나 유효하지 않은 경우 제거
+28         if animation.invalid() or animation.finished()
+29             .animations.remove(animation)
+30
+31     /* 다음 프레임에서 수행할 애니메이션이 존재한다면
+32        정의한 애니메이션 이벤트를 보내 메인 루프를 계속 가동한다. */
+33     if animations.count > 0
+34         EventHandler.send(...)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.9 루프 타임을 적용하지 않은 로직
+----------------------------------------------------------------------------------------
+01 /* 만약 루프 타임을 적용하지 않고 각 애니메이션마다 개별적으로
+02    시간을 구한다면 애니메이션 결과는 달라질 수 있다. */
+03 foreach(.animations, animation)
+04     animation.update(time())
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.10 UIAnimation progress 계산
+----------------------------------------------------------------------------------------
+01 UIAnimation.update(current):
+02     /* progress 값 계산. begin은 UIAnimation.play() 내에서 기록한
+03        애니메이션 시작 시간이고 duration은 애니메이션 재생 시간이다. */
+04     progress = (current - .begin) / .duration
+05 
+06     // 시간 초과에 주의
+07     if progress > 1
+08         progress = 1
+09 
+10     // 콜백 함수 호출하며 progress 전달
+11     .EventUpdated(self, .target, progress)
+12 
+13     // 애니메이션 종료
+14     .finish() if progress == 1
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.11 이징 함수 적용 예
+----------------------------------------------------------------------------------------
+01 /* 이징 함수를 적용하여 코드 6.10 개선 */
+02 UIAnimation.update(current):
+03     // progress 값 계산
+04     progress = (current - .begin) / .duration
+05
+06     // 이징 함수(easeIn)를 적용하여 progress 값 변경
+07     progress = easeIn(progress)
+08 
+09     // 시간 초과에 주의
+10     if progress > 1
+11         progress = 1
+12     ...
+13 
+14 /* 그림 6.13의 ease in 곡선 구현 */
+15 easeIn(progress):
+16     return (progress * progress * progress)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.12 인터폴레이터 도입
+----------------------------------------------------------------------------------------
+01 interface UIInterpolator:
+02    /* progress 값을 전달받고 수정한 progress 값을 반환 */
+03    var map(progress)
+04
+05 UIAnimation.update(current):
+06     ...
+07     // 코드 6.11에서 easeIn() 대신 인터폴레이터 기능 호출
+08     progress = .interpolator.map(progress)
+09     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.13 Ease In Interpolator 구현부
+----------------------------------------------------------------------------------------
+01 /* UIInerpolator 인터페이스 구현.
+02    map()은 인자 progress[0 - 1]를 3차 방정식을 통해 변경한 후 반환 */
+03 UIEaseInInterpolator implements UIInterpolator:
+04     override map(progress):
+05         return progress * progress * progress
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.14 사용자 정의 인터폴레이터 구현부
+----------------------------------------------------------------------------------------
+01 UICustomEaseInInterpolator implements UIInterpolator:
+02     override map(progress):
+03         // Sine 곡선 형태의 Ease In 구현
+04         radian = Math.degreeToRadian(progress * 90)
+05         return sin(radian)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.15 사용자 정의 인터폴레이터 적용
+----------------------------------------------------------------------------------------
+01 animation = UIAnimation():
+02     ...
+03     .interpolator = UICustomEaseInInterpolator // 사용자 커스텀 인터폴레이터
+04     .play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.16 프레임 번호 계산 로직
+----------------------------------------------------------------------------------------
+01 progress = (currentTime - beginTime) / duration     // 6.10(4행)
+02 currentFrame = maxFrame * progress                  // 6.7(9행)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.17 프레임 탐색 로직
+----------------------------------------------------------------------------------------
+01 /* 현재 프레임 번호(num)에 가장 근접한 키 프레임 데이터를 탐색하여 반환
+02  * 키 프레임 정보는 배열로 구축 */
+03 searchFrame(num):
+04     // 단일 프레임
+05     if .frames.count == 1
+06         return .frames[0].num
+07 
+08     var last = .frames.count - 1
+09 
+10     // 프레임 범위 확인
+11     return .frames[0].num if num <= .frames[0].num
+12     return .frames[last].num if num >= .frames[last].num
+13
+14     // 이진 탐색 수행 인덱스
+15     low = 1
+16     high = last
+17
+18     // 이진 탐색 수행
+19     while (low <= high)
+20         mid = low + (high - low) / 2
+21         // 현재 프레임 정보 탐색 완료
+22         if num == .frames[mid].num
+23             return .frames[mid]
+24         else if num > .frames[mid].num
+25             low = mid + 1
+26         else
+27             high = mid - 1
+28
+29     // 근접한 프레임 정보 탐색 완료
+30     // 또는 .frames[low - 1]와 .frames[low]의 정보를 보간한 정보를 반환할 수 있다
+31     if abs(num - .frames[low].num) < abs(num - .frames[low - 1].num)
+32         return .frames[low]
+33     else
+34         return .frames[low - 1]
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.18 이동 애니메이션 구현부
+----------------------------------------------------------------------------------------
+01 /* 이동 애니메이션 재생부 */
+02 UITranslationTransition.play():
+03     ...
+04     func(animation, target, progress):
+05         curPos = (prop.toPosition - prop.fromPosition) * progress + prop.fromPos
+06         target.position = curPos
+07         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.19 색상 애니메이션 구현부
+----------------------------------------------------------------------------------------
+01 /* 색상 애니메이션 구현부. */
+02 UIColorTransition.play():
+03     ...
+04     func(animation, target, progress):
+05         // toColor와 fromColor는 시작 색상과 종료 색상을 가리킨다.
+06         curColor.r = (prop.toColor - prop.fromColor) * progress + prop.fromColor
+07         target.color = curColor
+08         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.20 속성 애니메이션 구현부
+----------------------------------------------------------------------------------------
+01 UIPropertyTransition().play():
+02     ...
+03     func(animation, target, progress):
+04         // 위치
+05         target.position = (prop.toPosition - prop.fromPosition) * progress + prop.fromPosition
+06         // 색상
+07         target.color = (prop.toColor - prop.fromColor) * progress + prop.fromColor
+08         // 크기
+09         target.size = (prop.toSize - prop.fromSize) * progress + prop.fromSize
+10         // 투명도
+11         target.opacity = (prop.toOpacity - prop.fromOpacity) * progress + prop.fromOpacity
+12         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.21 속성 애니메이션 인터페이스 예
+----------------------------------------------------------------------------------------
+01 // 속성 애니메이션 객체 생성
+02 transition = UIPropertyTransition():
+03
+04     // 애니메이션을 수행할 객체 속성 지정
+05     .toPosition = {100, 200}
+06     .toScale = {1.5, 1.5}
+07     .toOpacity = 0.5
+08     .toColor = "red"
+09
+10     // 애니메이션 추가 정보(시간, 반복 횟수, 되감기 여부)
+11     .duration = 2.0
+12     .repeat = 3
+13     .rewind = true
+14 
+15     // 애니메이션 대상 객체
+16     .target = obj
+17 
+18     // 경우에 따라 커스텀 인터폴레이터 적용(코드 6.14 참조)
+19     .interpolator = UICustomEaseInInterpolator()
+20
+21     // 애니메이션 재생
+22     .play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.22 애니메이션 경합을 보완한 속성 애니메이션 구현
+----------------------------------------------------------------------------------------
+01 UIPropertyTransition.play():
+02     ...
+03     func(animation, target, progress):
+04         curPos = target.position
+05         prevProgress = prop.prevProgress
+06 
+07         /* 최신 위치를 반영하여 이동할 위치를 갱신한다. 이를 위해
+08            현재 위치와 목적지까지의 거리를 기준으로 진행률을 도출한다. */
+09         oneStep = (progress - prevProgress) / (1 – prevProgress)
+10         target.position = (prop.toPos - curPos) * oneStep + curPos
+11 
+12         // 색상, 크기, 투명도 등 다른 속성도 같은 방식으로 구현
+13         ...
+14         prop.prevProgress = progress
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.23 키 프레임 삽입을 통한 애니메이션 확장
+----------------------------------------------------------------------------------------
+01 // 기본 속성 애니메이션 (A → D로 전이)
+02 transition = UIPropertyTransition():
+03     .toPosition = {50, 450}
+04     .toOpacity = 0.25
+05     .toColor = "blue"
+06     .duration = 2.0
+07     .target = obj
+08
+09 // A → B로의 상태 전이
+10 prop1 = UITransitonProperty():
+11     .toPosition = {450, 50}
+12     .toOpacity = 0.5
+13 
+14 // B → C로의 상태 전이
+15 prop2 = UITransitionProperty():
+16     .toPosition = {450, 450}
+17     .toOpacity = 0.75
+18
+19 // C → D 로의 상태 전이
+20 prop3 = UITransitionProperty():
+21     .toPosition = {50, 450}
+22     .toOpacity = 0.75
+23 
+24 // 키 프레임 추가
+25 transition.addKeyframe(0.25, prop1)
+26 transition.addKeyframe(0.50, prop2)
+27 transition.addKeyframe(0.75, prop3)
+28 
+29 // 애니메이션 재생
+30 transition.play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.24 블러 필터 커널 계산
+----------------------------------------------------------------------------------------
+01 /* UIFilter 인터페이스를 구현하여 UIBlurFilter 완성
+02    UIFilter는 4.6절을 참고한다 */
+03 UIBlurFilter implements UIFilter:
+04     var kernel[] // 커널(테이블)
+05     var power // 흐림도
+06     ...
+07     /* 블러 필터 준비 작업 */
+08     override prepare():
+09         // 흐림도를 반경으로 활용
+10         radius = .power
+11
+12         // 반경에 비례한 표준 편차 값 계산. 최소 1의 값을 갖는다
+13         sigma = max(1, radius / 2)
+14 
+15         // 커널 테이블 크기 결정. 중앙 화소를 위해 + 1 수행
+16         size = radius * 2 + 1
+17         .kernel = var[size, size]
+18
+19         // 가우시안 수식을 토대로 커널 값 계산
+20         s = 2.0 * sigma * sigma
+21 
+22         for y : [-radius ~ radius + 1]
+23             for x : [-radius ~ radius + 1]
+24                 r = x * x + y * y
+25                 // Math.E = 2.718281828459
+26                 weight = pow(Math.E, -(r / s)) / (Math.PI * s)
+27                 .kernel[y + radius, x + radius] = weight
+28                 sum += weight
+29 
+30         // 커널 값을 정규화하여 합이 1이 되도록 변환
+31         for y : size
+32             for x : size
+33                 .kernel[y, x] /= sum
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.25 블러 필터 호출부
+----------------------------------------------------------------------------------------
+01 obj = UIObject()
+02 ...
+03 filter = UIBlurFilter():
+04     .power = 1           // 블러 단계 지정
+05 obj.filters += filter    // UI 객체에 블러 필터 적용
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.26 블러 필터 구현부
+----------------------------------------------------------------------------------------
+01 UIBlurFilter implements UIFilter:
+02     /* 블러 필터 수행 함수
+03        @p in: RGBA32 (미사용)
+04        @p coord: Point */
+05     override func(in, coord, ...):
+06         radius = .power                     // 흐림도를 반경으로 활용
+07 
+08         // 이미지 경계 영역을 벗어날 경우 생략
+09         return in if coord.x <= radius or coord.x >= .src.width - radius
+10         return in if coord.y <= radius or coord.y >= src.height - radius
+11
+12         RGBA32 srcBitmap[] = .src.map()     // 블러를 적용할 이미지
+13         RGBA32 out = 0                      // 최종 화소
+14 
+15         for(ky = -radius; ky <= radius; ++ky)
+16             for(kx = -radius; kx <= radius; ++kx)
+17                 pixel = srcBitmap[(coord.y + ky) * .src.stride + (coord.x + kx)]
+18                 // 가중치를 곱한 화소 합성
+19                 out += pixel * .kernel[ky + radius, kx + radius]
+20 
+21         return out
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.27 블러 애니메이션 구현
+----------------------------------------------------------------------------------------
+01 // UI 객체에 블러 필터 추가
+02 content = UIObject():
+03     .filters += UIBlurFilter()
+04     ...
+05
+06 // 블러 애니메이션 구현
+07 // 블러 필터만 추가했으므로 첫 번째(0번) 필터에 바로 접근한다
+08 tick(animation, obj, progress):
+09     filter = obj.filters[0]
+10     // 1초 동안 블러 단계는 0에서 10으로 증가
+11     filter.power = (10 * progress)
+12
+13 // 1초 동안 애니메이션 가동
+14 animation = UIAnimation(1.0):
+15     .EventUpdated += {tick, content}
+16     .play()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.28 UI 윈도 포커스 기능 구현
+----------------------------------------------------------------------------------------
+01 MyApp implements UIApp:
+02     UIWindow myWnd
+03 
+04     // 앱 생성 단계
+05     override create():
+06         // 윈도 포커스 이벤트 구현
+07         focused(UIWindow obj, ...):
+08             // 포커스 상태에서는 사용자 입력 이벤트가 발생할 수 있다
+09             ...
+10 
+11         // 윈도 포커스 해제 이벤트 구현
+12         unfocused(UIWindow obj, ...):
+13             // 포커스 해제 상태에서는 사용자 입력 이벤트가 오지 않는다
+14             ...
+15 
+16         /* 팝업 타입의 윈도 생성. 윈도 관리자는 클라이언트 윈도 타입에
+17            따라 포커스 우선 순위나 룰을 다르게 적용할 수 있다 */
+18         .myWnd = UIWindow(UIWindow.TypePopup):
+19             ...
+20             .allowFocus = true                 // 포커스 허용 여부
+21             .EventFocused += focused           // 포커스 이벤트 등록
+22             .EventUnfocused += unfocused       // 포커스 해제 이벤트 등록
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.29 UIEngine 입력 이벤트 처리 과정
+----------------------------------------------------------------------------------------
+01 UIEngine:
+02     ...
+03     /* 이벤트 발생 여부 대기(코드 6.8의 8행에서 호출) */
+04     waitForEvents():
+05         ...
+06         // 파일 디스크립터(File Descriptor)를 이용한 이벤트 발생 대기
+07         fd = open("UISystemEvents", O_RDONLY)
+08         // 이벤트 버퍼에 입력 신호가 입력될 때까지 대기
+09         read(fd, buffer, bufferSize)
+10         ...
+11
+12     /* 이벤트 처리(코드 6.8의 10헹에서 호출) */
+13     processEvents():
+14         ...
+15         dispatchInputEvents()
+16         ...
+17         AnimationCore.update(.loopTime)
+18         ...
+19 
+20     /* 입력 이벤트 디스패치 후 캔버스로 전달 */
+21     dispatchInputEvents():
+22     InputEventsQueue events // 처리할 입력 이벤트 큐
+23 
+24     // 스레드 안정성(Thread-Safety)을 위한 락킹
+25     ScopeLock(InputEventListener.events)
+26         events = InputEventListener.events
+27
+28     // 메인 루프한 사이클 동안 발생한 입력 이벤트를 모두 처리
+29     while events.count > 0
+30         InputEvent event = events.pop()
+31         // event를 UICanvas의 인터페이스에 맞게 추가 가공(생략)
+32         ...
+33         // UIEngine에 등록된 캔버스로 전달(코드 2.6의 16행 참고)
+34         .canvas.trigger(event)
+35     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.30 UICanvas 이벤트 수행 로직
+----------------------------------------------------------------------------------------
+01 /* 캔버스에서 입력 이벤트 처리(코드 6.29의 34행에서 호출)
+02    event는 UIEngine으로부터 전달받은 입력 이벤트 정보 보유 */
+03 UICanvas.trigger(event):
+04     // 이벤트가 키 입력 이벤트일 경우 포커스 객체로 전달
+05     if event.deviceId == INPUT_EVENT_KEY
+06         if .focusedObj.valid()
+07             obj.processKeyEvent(event, ...)
+08         return
+09
+10     // 이벤트가 마우스(터치) 입력 이벤트일 경우 대상 객체를 찾아 전달
+11     if event.deviceId == INPUT_EVENT_MOUSE
+12         /* 이벤트를 전파할 대상 객체 탐색
+13            객체 목록은 레이어순으로 정렬되어 있다고 가정 */
+14         for obj : .objs
+15             /* 현재 obj가 이벤트 대상에 해당하고 이벤트를 우회하거나
+16                전파할 필요가 없는 경우 탐색 종료 */
+17             return if obj.processMouseEvent(event, ...) == true
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.31 객체별 이벤트 전달 방식 설정
+----------------------------------------------------------------------------------------
+01 obj0.eventMethod = UIObject.EventMethodDefault
+02 obj1.eventMethod = UIObject.EventMethodBypass
+03 obj2.eventMethod = UIObject.EventMethodPropagation
+04 obj3.eventMethod = UIObject.EventMethodBlock
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.32 UIObject 마우스 이벤트 수행 로직
+----------------------------------------------------------------------------------------
+01 /* UIObject 객체 수준에서 이벤트 처리 작업 수행
+02    반환 값으로 이벤트를 다음 객체로 전달할지 여부 결정 */
+03 UIObject.processMouseEvent(event, ...):
+04
+05     // 활성 객체인 경우에만 이벤트 수행
+06     return false if self.active == false
+07 
+08     // 이벤트 발생 위치가 오브젝트 영역 내에 위치하는가?
+09     if intersects(self.geometry, event.coordinates) == false
+10         return false
+11
+12     // 이벤트 차단
+13     return true if self.eventMethod == UIObject.EventMethodBlock
+14 
+15     // 이벤트 우회
+16     return false if self.eventMethod == UIObject.EventMethodBypass
+17 
+18     /* 장면 그래프 구조에서 자식이 존재하는 경우 자식에게 먼저 이벤트 전달
+19        자식 목록은 레이어순으로 정렬되어 있다고 가정 */
+20     for child : .children
+21         break if child.processMouseEvent(event, ...) == true
+22
+23     /* 이벤트 대상 확정. 객체 상태 및 이전 입력 이벤트 등 문맥을 고려하여
+24     최종 마우스 입력 이벤트(제스처) 결정 */
+25     gestureInfo = UIGesture.process(obj, event, ...)
+26 
+27     // 해당 제스처 타입으로 등록된 사용자 콜백 함수 목록(그림 6.36 참고)
+28     List eventCbs = .eventTable[gestureInfo.type]
+29 
+30     // 등록된 콜백 함수 순차적 호출
+31     for eventCb : .eventCbs
+32         eventCb.func(obj, gestureInfo)
+33 
+34     // 이벤트 기본 수행 및 종료
+35     return true if obj.eventMethod == UIObject.EventMethodDefault
+36 
+37     // 이벤트 전파
+38     return false
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.33 제스처를 이용한 확대/축소 인터랙션 구현
+----------------------------------------------------------------------------------------
+01 /* 다음 UIGesture 설정은 앱에서 사용하는 제스처 기능에 전역적으로
+02    영향을 미친다. */
+03 
+04 // 확대 /축소 변화 비율을 기준 대비 1.25배로 설정
+05 UIGesture.zoomFactor = 1.25
+06 // 확대 /축소 인식을 위해 두 탭 간 최소 거리를 100화소로 지정
+07 UIGesture.zoomDistanceTolerance = 100
+08 ...
+09 
+10 // 확대 /축소 제스처 발생 시 해당 값만큼 뷰를 확대 또는 축소
+11 func(UIView obj, UIGestureZoomInfo gestureInfo):
+12     obj.scale = gestureInfo.zoom
+13
+14 // 확대 /축소 제스처 이벤트 등록
+15 view = UIView():
+16     .EventGestureZoom += func
+17 ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.34 UITask & UITaskScheduler 핵심 인터페이스 설계
+----------------------------------------------------------------------------------------
+01 /* UITask는 UIEngine과 동기화를 수행하는 병렬(또는 직렬) 작업을 구축한다.
+02    사용자는 작업 병렬화를 위해 UITask로부터 사용자 클래스를 확장한다.
+03    UITask는 run()을 통해 실행되고 작업 스레드에서 run()을 수행한다.
+04    run()을 종료하면 동기화 작업 기회를 제공하기 위해
+05    주 스레드에서는 end()를 호출한다. */
+06 interface UITask:
+07     /* 수행할 동기/비동기 작업을 구현한다. 비동기(async)일 경우 run()은
+08        작업 스레드에서 호출되고 동기(sync)일 경우 메인 루프를 구동하는
+09        주 스레드에서 호출된다. */
+10     run():
+11 
+12     /* run()이 끝나면 호출된다. done()에서는 작업 결과물을 공유 자원(UI 객체)
+13        에 반영하거나 리소스를 정리하는 작업을 수행할 수 있다. */
+14     done():
+15 
+16 /* 태스크 스케줄러. 구현 핵심은 멀티 스레드를 내부적으로 운용하고
+17    UIEngine과 통신을 통해 동기화를 보장하는 것이다. */
+18 UITaskScheduler:
+19     /* 작업 스레드를 배정하고 태스크를 실행한다. */
+20     request(UITask task):
+21     /* 동기화 작업 수행. 작업을 완료한 태스크들의 done() 호출 */
+22     sync():
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.35 UITask를 이용한 비동기 작업 구현
+----------------------------------------------------------------------------------------
+01 /* 특정 비동기 작업을 위해 UITask로부터 UserTask를 구현 */
+02    UserTask implements UITask:
+03 
+04     /* UIImage는 캔버스에 종속된 공유 자원에 해당.
+05        동기화를 무시하고 작업 스레드에서 해당 객체에 접근 시
+06        주 스레드에서 구동 중인 캔버스와 불안한 경합을 초래할 수 있다. */
+07     UIImage img
+08 
+09     constructor():
+10         // img 초기화 설정 (생략)
+11         ...
+12 
+13     /* 어떤 막중한(Heavy) 작업을 한다고 가정 */
+14     override run():
+15         /* 원격으로 대용량 이미지를 내려받는다
+16            내려받기를 완수하면 run()를 종료한다. */
+17         ...
+18 
+19     /* 작업 종료 수행 */
+20     override end():
+21         // 내려받은 이미지를 이미지 객체를 통해 출력
+22         .img.path = "/tmp/downloaded.png"
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.36 UITaskScheduler를 이용한 비동기 작업 호출
+----------------------------------------------------------------------------------------
+01 /* func()은 주 스레드에서 호출되는 상용자 임의 함수 */
+02 func():
+03     task = UserTask()
+04 
+05     /* 스레드를 배정받고 task를 실행한다. 필요하면 메서드 인자나 컴파일러
+06        내장 옵션을 통해 동기/비동기 수행을 결정할 수 있을 것이다. */
+07     UITaskScheduler.request(task)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.37 임계 영역 지정 후 공유 자원 접근
+----------------------------------------------------------------------------------------
+01 UserTask.task():
+02     /* 여기서 어떤 막중한(Heavy)한 작업을 한다고 가정 */
+03     repeat:
+04         RGBA32 bitmap[] = generateImage(...)
+05 
+06         /* beginCriticalSection()을 호출하면 메인 루프가 동작을 중단하고
+07            작업 스레드에서 공유 자원에 안전하게 접근할 수 있도록 도와준다. 
+08            공유 자원 사용 후에는 endCriticalSection()을 호출하여 
+09            메인 루프를 재개한다. */
+10         UIEngine.beginCriticalSection()
+11             .img.load(bitmap) // 캔버스 엔진에 종속된 공유 자원 접근
+12         UIEngine.endCriticalSection()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 6.38 스케줄링 기반의 작업 병렬화
+----------------------------------------------------------------------------------------
+01 /* 태스크 스케줄러 */
+02 TaskScheduler:
+03     Thread threads[]        // 작업 스레드
+04     Tasks pendingQueues[]   // 태스크 큐 (스레드 수만큼 할당)
+05     Tasks completedQueue    // 태스크 큐 (스레드 수만큼 할당)
+06     var threadIdx = 0       // 다음 작업에 이용할 스레드 번호
+07     var threadCnt = 0       // 스레드 수
+08
+09     /* 생성자: 스레드와 태스크 큐 초기화 */
+10     constructor(threadCnt):
+11         self.threadCnt = threadCnt
+12
+13         for i : threadCnt
+14             // 작업 스레드로 TaskScheduler.run() 실행
+15             self.threads[i] = Thread(self.run)
+16             self.taskQueues[i] = TaskQueue()
+17
+18     /* 소멸자: 수행 중인 모든 스레드와 태스크 큐 정리 */
+19     destructor():
+20         // 남아있는 작업 모두 정리
+21         while pendingQueues.empty() == false
+22             ...    //pendingQueues에 데이터가 없을 때까지 단순 반복
+23         // 작업 완료 신호 보냄
+24         ScopeLock(completedQueue)
+25             for task : completedQueue
+26                 task.done()
+27         // 스레드 강제 종료 (정상적인 종료 메커니즘 필요)
+28         for thread : threads
+29             thread.destroy()
+30
+31     /* 작업 스레드 수행 */
+32     run():
+33         // 스레드 루프
+34         while true
+35             executed = false
+36             for i : threadCnt
+37                 // 태스크 큐로부터 대기 중인 작업을 하나 획득한 후 실행
+38                 Task task 
+39                 ScopeLock(pendingQueues[i]) 
+40                     task = pendingQueues[i].pop()
+41                     if task.valid()
+42                         task.run()
+43                     // 완료한 작업은 완수한 큐에 추가
+44                     ScopeLock(completedQueue)
+45                         completedQueue.push(task)
+46                     executed = true
+47             //유효한 작업이 없을 경우 스레드를 휴면 상태로 전환할까?
+48             if executed == false
+49                 sleep(0.016)
+50
+51     /* 비동기 작업 실행 요청 */
+52     request(task):
+53         // 순서대로 번갈아 가면서 스레드 큐에 작업 추가
+54         threadIdx = (threadIdx + 1) % threadCnt
+55         ScopeLock(pendingQueues[threadIdx])
+56             pendingQueues[threadIdx].push(task)
+57
+58     /* 완료한 작업 정리 수행 */
+59     sync():
+60         task : completedQueue
+61             task.done()
+62         completedQueue.clear()
+----------------------------------------------------------------------------------------
