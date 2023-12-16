@@ -1,0 +1,1106 @@
+# UI System Blackbook Code by 박춘언 (hermetpark@gmail.com)
+
+
+@코드 3.1 SVG 그래디언트 채우기 및 텍스트
+----------------------------------------------------------------------------------------
+01 <!-- svg 선언, 기본 사이즈 세로: 150, 가로: 400 -->
+02 <svg height="150" width="400">
+03     <defs>
+04         <!-- 선형 그래디언트, 좌측에서 우측 방향 -->
+05         <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+06         <!-- 그래디언트 지점 및 색상. 좌측 끝: 노란색 -->
+07         <stop offset="0%" style="stop-color:rgb(255,255,0);stop-opacity:1" />
+08         <!-- 그래디언트 지점 및 색상. 우측 끝: 빨간색 -->
+09         <stop offset="100%" style="stop-color:rgb(255,0,0);stop-opacity:1" />
+10         </linearGradient>
+11     </defs>
+12     <!-- 타원, 중심 좌표: (200, 70), 가로 반지름: 85, 세로 반지름: 55, 색상: grad1 참조 -->
+13     <ellipse cx="200" cy="70" rx="85" ry="55" fill="url(#grad1)" />
+14     <!-- 텍스트 SVG, 색상: 흰색, 폰트 크기: 45, 폰트명: Verdana, 위치 좌표: (150, 86) -->
+15     <text fill="#ffffff" font-size="45" font-family="Verdana" x="150" y="86">SVG</text>
+16 </svg>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.2 SVG 스트로크 예제
+----------------------------------------------------------------------------------------
+01 <svg height="80" width="300">
+02     <!-- 이하 스트로크 동일 속성. 색상: 검정, 스트로크 너비: 6 -->
+03     <g fill="none" stroke="black" stroke-width="6">
+04         <!-- 경로, 시작점: (5,20), 이동 거리: (215, 0),
+05           스트로크 라인캡 스타일: butt -->
+06         <path stroke-linecap="butt" d="M5 20 l215 0" />
+07         <!-- 경로, 시작점: (5,40), 이동 거리: (215, 0),
+08           스트로크 라인캡 스타일: round -->
+09         <path stroke-linecap="round" d="M5 40 l215 0" />
+10         <!-- 경로, 시작점: (5,60), 이동 거리: (215, 0),
+11           스트로크 라인캡 스타일: square -->
+12         <path stroke-linecap="square" d="M5 60 l215 0" />
+13     </g>
+14 </svg>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.3 SVG 다각형 예제
+----------------------------------------------------------------------------------------
+01 <svg height="210" width="500">
+02     <!—폴리곤, 정점 (100,10), (40,198), (190,78), (10,78),(160,198)
+03       채우기 색상: 라임, 스트로크 색상: 보라, 스트로크 너비: 5 -->
+04     <polygon points="100,10 40,198 190,78 10,78 160,198"
+05              style="fill:lime;stroke:purple;stroke-width:5;" />
+06 </svg>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.4 SVG 경로 예제
+----------------------------------------------------------------------------------------
+01 <svg height="400" width="450">
+02    <!-- 경로 (A-B), 시작점: (100,350), 이동 거리: (150, -300),
+03          스트로크 색상: 빨강, 스트로크 너비: 3 -->
+04     <path d="M 100 350 l 150 -300" stroke="red" stroke-width="3" />
+05     <path d="M 250 50 l 150 300" stroke="red" stroke-width="3" />
+06     <path d="M 175 200 l 150 0" stroke="green" stroke-width="3" />
+07     <!-- 경로, 시작점: (100,350), 2차 베지어 곡선: P1(150, -300), P2(300, 0)
+            스트로크 색상: 파랑, 스트로크 너비: 5 -->
+08     <path d="M 100 350 q 150 -300 300 0" stroke="blue" stroke-width="5" />
+09     <!-- 이하 스트로크 동일 적용. 색상: 검정, 스트로크 너비: 3 -->
+10     <g stroke="black" stroke-width="3" fill="black">
+11         <!-- 원(A): 중심 좌표: (100, 350), 반지름: 3 -->
+12         <circle cx="100" cy="350" r="3" />
+13         <circle cx="250" cy="50" r="3" />
+14         <circle cx="400" cy="350" r="3" />
+15     </g>
+16     <!-- 이하 텍스트 동일 적용. 폰트 크기: 30, 폰트명: sans-serif, 색상: 검정, 정렬: 가운데 -->
+17     <g font-size="30" font-family="sans-serif" fill="black" text-anchor="middle">
+18         <!-- 텍스트: A, 좌표: (100 - 30, 350) -->
+19         <text x="100" y="350" dx="-30">A</text>
+20         <text x="250" y="50" dy="-10">B</text>
+21         <text x="400" y="350" dx="30">C</text>
+22     </g>
+23 </svg>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.5 벡터 드로잉 호출 과정
+----------------------------------------------------------------------------------------
+01 UICanvas.render():
+02     ...
+03     // 렌더링 객체를 대상으로 엔진이 보유한 출력 버퍼에 UI 드로잉 수행
+04     context = RenderContext(engine)
+05 
+06     /* 렌더링 객체 대상으로 렌더링 수행. 이때 각 객체가 그릴 대상 버퍼와 필요 정보를
+07        context 인자로 전달(코드 2.20 참고)*/
+08     for obj : renderObjs
+09         obj.render(context, ...)
+10     ...
+11 
+12 /* UIObject의 파생 클래스인 UIRect는 VectorEngine(context.engine)으로
+13    NativeBuffer(context.target)을 전달하고 VectorEngine은 NativeBuffer를 대상으로
+14    래스터 작업을 수행하여 벡터 이미지를 완성. */
+15 UIRect.render(context, ...):
+16     ...
+17     context.engine.drawRect(context.target, ...)
+18     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.6 사각형 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 사각형 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p rect: Geometry
+05 */
+06 VectorEngine.drawRect(buffer, rect, ...):
+07     RGBA32 bitmap[] = buffer.map()      // 버퍼 메모리 접근
+08     stride = buffer.stride              // bitmap 버퍼 가로 크기
+09
+10     // bitmap에서 사각형을 그릴 시작 위치
+11     bitmap += (rect.y * stride) + rect.x
+12 
+13     // 사각형 래스터 작업. 색상은 임의로 흰색 지정
+14     for y : rect.h
+15         for x : rect.w
+16             bitmap[y * stride + x] = 0xffffffff
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.7 클리핑 수행
+----------------------------------------------------------------------------------------
+01 /*
+02  * 두 사각 영역의 교집합 영역 계산
+03  * @p rect1: Geometry
+04  * @p rect2: Geometry
+05 */
+06 intersect(rect1, rect2):
+07     // 사각형 우측 하단 꼭지점 위치 계산
+08     x1 = rect1.x + rect1.w
+09     y1 = rect1.y + rect1.h
+10     x2 = rect2.x + rect2.w
+11     y2 = rect2.y + rect2.h
+12     // 두 사각형 교집합 계산
+13     result = Geometry():
+14         .x = max(rect1.x, rect2.x)
+15         .y = max(rect1.y, rect2.y)
+16         .w = min(x1, x2) - .x
+17         .h = min(y1, y2) - .y
+18         if (.w < 0) .w = 0
+19         if (.h < 0) .h = 0
+20
+21     return result
+22
+23 VectorEngine.drawRect(buffer, rect, ...):
+24     ...
+25     // 클리핑을 수행하고 실제 드로잉 영역(clipped) 구함
+26     clipped = intersect(rect, Geometry(0, 0, buffer.width, buffer.height))
+27     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.8 드로잉 영역 계산(최종 버전)
+----------------------------------------------------------------------------------------
+01 /*
+02 * 사각형 그리는 작업 수행(최종 버전)
+03 * @p buffer: NativeBuffer
+04 * @p rect: Geometry
+05 * @p clipper: Geometry
+06 */
+07 VectorEngine.drawRect(buffer, rect, clipper, ...):
+08     ...
+09     // 버퍼 영역을 벗어나지 않도록 클리핑 수행
+10     clipped = intersect(rect, Geometry(0, 0, buffer.width, buffer.height))
+11
+12     // 제시된 클리퍼를 대상으로 추가 클리핑 수행
+13     clipped = intersect(clipped, clipper)
+14     ...
+15 
+16 UIRect.render(context, ...):
+17     ...
+18     /* 사각 영역과 오브젝트 영역 모두 벡터 그래픽 엔진에 전달
+19        오브젝트 영역은 클립 영역으로 활용 */
+20     context.engine.drawRect(context.target, .rect, .geometry, ...)
+21     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+@코드 3.9 직선 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 직선 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p pt1: Point(시작점)
+05  * @p pt2: Point(끝점)
+06  * @p clipper: Geometry
+07 */
+08 VectorEngine.drawLine(buffer, pt1, pt2, clipper, ...):
+09     ...
+10     m = (pt2.y - pt1.y) / (pt2.x - pt1.x) // 기울기
+11 
+12     // 직선의 x축 클리핑. pt1은 pt2보다 값이 작다고 가정
+13     sx = pt1.x < clipped.x ? clipped.x : pt1.x
+14     ex = pt2.x >= (clipped.x + clipped.w) ? (clipped.x + clipped.w - 1) : pt2.x
+15 
+16     // x값을 인자로 y값 도출. 직선 기울기가 y축에 가깝다면 y값을 기준으로 x값을 도출할 것
+17     for x : [sx ~ ex]
+18         // 정수형 경우 반올림(rounding) 처리에 주의
+19         y = m * (x - pt1.x) + pt1.y
+20         // 직선의 y축 클리핑
+21         break if y < clipped.y or y >= (clipped.y + clipped.h)
+22 
+23         bitmap[y * stride + x] = 0xffffffff
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.10 원 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 원 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p center: Point
+05  * @p radius: var
+06 */
+07 VectorEngine.drawCircle(buffer, center, radius, ...):
+08     ...
+09     // 1사분면에 한하여 계산
+10     for y : [(center.y – radius) ~ center.y]
+11         // 원 방정식을 이용한 x값 도출
+12         x = sqrt(pow(radius, 2) - pow(y - center.y, 2)) + center.x
+13         sx = x + (center.x - x) * 2             // x값 대칭
+14         sy = y + (center.y - y) * 2             // y값 대칭
+15 
+16         // 원의 외곽선에 해당하는 화소
+17         bitmap[y * stride + x] = 0xffffffff     // 1사분면
+18         bitmap[y * stride + sx] = 0xffffffff    // 2사분면
+19         bitmap[sy * stride + sx] = 0xffffffff   // 3사분면
+20         bitmap[sy * stride + x] = 0xffffffff    // 4사분면
+21
+22         // 원 내부 화소 채우기
+23         for i : [sx  ~ x]
+24             bitmap[y * stride + i] = 0xffffffff
+25             bitmap[sy * stride + i] = 0xffffffff
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.11 타원(원) 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 타원(원) 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p center: Point
+05  * @p radius: Point
+06 */
+07 VectorEngine.drawCircle(buffer, center, radius, ...):
+08     ...
+09     px = MAX_INTEGER // 이전 화소의 x값 보관
+10
+11     // 1사분면에 한하여 계산
+12     y = center.y – radius.y
+13     for y : [(center.y – radius.y) ~ center.y]
+14         a2 = pow(radius.x, 2)
+15         b2 = pow(radius.y, 2)
+16         // 타원 방정식을 이용한 x값 도출
+17         x = sqrt(a2 - pow(y - center.y, 2) / b2 * a2) + center.x
+18         sx = x + (center.x - x) * 2             // x값 대칭
+19         sy = y + (center.y - y) * 2             // y값 대칭
+20
+21         // 원의 외곽선에 해당하는 화소
+22         // 원 전체에 화소를 기록하기 위해서는 코드 3.10 참고
+23         bitmap[y * stride + x] = 0xffffffff     // 1사분면
+24         bitmap[y * stride + sx] = 0xffffffff    // 2사분면
+25         bitmap[sy * stride + sx] = 0xffffffff   // 3사분면
+26         bitmap[sy * stride + x] = 0xffffffff    // 4사분면
+27 
+28     // 누락 화소 보완
+29     x -= px
+30     while --x > 0
+31         // 타원 방정식을 이용한 y값 도출
+32         y = sqrt(b2 - pow((x - i) - center.x, 2) / a2 * b2) + center.y
+33         // x, y를 참고하여 네 사분면의 외곽 출력
+34         ...
+35         px = x // 화소의 x값 보관
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.12 베지어 곡선 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 3차 베지어 곡선을 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p start: Point
+05  * @p control1: Point
+06  * @p control2: Point
+07  * @p end: Point
+08 */
+09 VectorEngine.drawCurve(buffer, start, control1, control2, end, ...):
+10     // 긴 축을 찾아 그 길이만큼 반복문 수행
+11     sx = abs(end.x - start.x)
+12     sy = abs(end.y - start.y)
+13     segment = sx > sy ? sx : sy
+14     prev = start                    // 이전 좌표값
+15 
+16     for t : [1 ~ segment]
+17         // 계수 구하기
+18         a = pow((1 - t), 3)
+19         b = 3 * pow((1 - t), 2) * t
+20         c = 3 * (1 - t) * pow(t, 2)
+21         d = pow(t, 3)
+22 
+23         Point cur                   // 현재 좌표값
+24         cur.x = a * start.x + b * control1.x + c * control2.x + d * end.x
+25         cur.y = a * start.y + b * control1.y + c * control2.y + d * end.y
+26
+27         // 구간을 선으로 연결
+28         VectorEngine.drawLine(buffer, prev, cur, ...)
+29 
+30         prev = cur
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.13 각도-라디안 변환
+----------------------------------------------------------------------------------------
+01 Math.PI = 3.141592653589
+02
+03 // 각도를 라디안 단위로 변환
+04 Math.degreeToRadian(degree):
+05     return degree / 180 * PI
+06
+07 // 라디안을 각도 단위로 변환
+08 Math.radianToDegree(radian):
+09     return radian * 180 / PI
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.14 2D 벡터 회전
+----------------------------------------------------------------------------------------
+01 // 2D 벡터 회전
+02 Vector2.rotate(angleInDegree):
+03     radian = Math.degreeToRadian(angle)
+04     .x = cos(radian) * .x - sin(radian) * .y
+05     .y = sin(radian) * .x + cos(radian) * .y
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.15 부채꼴 드로잉 로직
+----------------------------------------------------------------------------------------
+01 /*
+02  * 호(부채꼴) 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p center: Point
+05  * @p radius: var
+06  * @p startAngle: var (시작 각, 단위는 각도)
+07  * @p sweep: var (회전 각, 단위는 각도)
+08  * @p pie: bool (호 또는 부채꼴 완성 여부)
+09 */
+10 VectorEngine.drawArc(buffer, center, radius, startAngle, sweep, pie...):
+11     ...
+12     // 사이각이 360 이상일 경우 원과 동일
+13     if sweep >= 360 or sweep <= -360
+14         drawCircle(buffer, center, radius, ...)
+15         return
+16 
+17     // 라디안 단위로 변환
+18     startAngle = Math.degreeToRadian(startAngle)
+19     sweep = Math.degreeToRadian(sweep)
+20
+21     // 호가 원의 네 사분 중 몇 사분에 걸쳐 있는지 확인
+22     nCurves = ceil(abs(sweep / (Math.PI * 0.5)))
+23     sweepSign = sweep < 0 ? -1 : 1 // 회전 방향
+24     fract = mod(sweep, Math.PI * 0.5) // 마지막에 그려질 사분에서 남은 각
+25     if fract == 0
+26         fract = Math.PI * 0.5 * sweepSign
+27 
+28     start = Vector2(radius, 0).rotate(startAngle)
+29 
+30     // 부채꼴인 경우 원점에서 시작점까지 선을 그린다
+31     if pie
+32         drawLine(center, center + start)
+33 
+34     // 앞에서 구한 호가 걸쳐 있는 사분면에 대해서 드로잉 작업 수행
+35     for i : (nCurves + 1)
+36         if i not (nCurves - 1)
+37             endAngle = startAngle + Math.PI * 0.5 * sweepSign
+38         else
+39             endAngle = startAngle + fract
+40 
+41         end = Vector2(radius, 0).rotate(endAngle)
+42
+43         // Aleksas Riškus식 구현
+44         a = start
+45         b = end
+46         q1 = a.x * a.x + a.y * a.y
+47         q2 = a.x * b.x + a.y * b.y + q1
+48         k2 = (4/3) * ((sqrt(2 * q1 * q2) – q2) / (a.x * b.y – a.y * b.x))
+49 
+50         // 베지어 곡선 제어점
+51         c1 = Point(a.x – k2 * a.y + center.x, a.y + k2 * a.x + center.y)
+52         c2 = Point(b.x + k2 * b.y + center.x, b.y – k2 * b.x + center.y)
+53
+54         drawCurve(start + center, c1, c2, end + center)
+55
+56         // 다음 사분 시작점과 끝점
+57         start = end
+58         startAngle = endAngle
+59
+60     // 부채꼴인 경우 원점에서 끝점까지 선을 그린다
+61     if pie
+62         drawLine(center, end)
+----------------------------------------------------------------------------------------
+
+
+
+
+@코드 3.16 모서리를 둥글린 사각형 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 모서리를 둥글린 사각형 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p rect: Geometry
+05  * @p cr: Point (Corner Radius)
+06 */
+07 VectorEngine.drawRoundRect(buffer, rect, cr, ...):
+08     hw = rect.w * 0.5 // 가로 크기 반
+09     hh = rect.h * 0.5 // 세로 크기 반
+10
+11     // 모서리 반경 예외 처리
+12     if cr.x > hw
+13         cr.x = hw
+14     if cr.y > hh
+15         cr.y = hh
+16     // 완전 사각형
+17     if cr.x == 0 and cr.y == 0
+18         drawRect(..., rect, ...)
+19     // 완전한 원 또는 타원
+20     else if cr.x == hw and cy == hh
+21         drawCircle(..., rect.x + halfW, rect.y + hh, cr, ...)
+22     // 모서리를 둥글린 사각형
+23     else
+24         // 선1
+25         sp = Point(rect.x + cr.x, rect.y)
+26         ep = Point(rect.x + rect.w – cr.x, rect.y)
+27         drawLine(buffer, sp, ep, ...)
+28         // 선2
+29         sp = Point(rect.x + rect.w, rect.y + cr.y)
+30         ep = Point(rect.x + rect.w, rect.y + rect.h – cr.y)
+31         drawLine(buffer, sp, ep, ...)
+32         // 선3
+33         sp = Point(rect.x + cr.x, rect.y + rect.h)
+34         ep = Point(rect.x + rect.w – cr.x, rect.y + rect.h)
+35         drawLine(buffer, sp, ep, ...)
+36         // 선4
+37         sp = Point(rect.x, rect.y + cr.y)
+38         ep = Point(rect.x, rect.y + rect.h – cr.y)
+39         drawLine(buffer, sp, ep, ...)
+40         // 모서리1
+41         sp = Point(rect.x + rect.w – cr.x, rect.y)
+42         cp1 = Point(rect.x + rect.w – cr.x + cr.x * 0.5, rect.y)
+43         cp2 = Point(rect.x + rect.w, rect.y + cr.y – cr.y * 0.5)
+44         ep = Point(rect.x + rect.w, rect.y + cr.y)
+45         drawCurve(buffer, sp, cp1, cp2, ep, ...)
+46         // 모서리2
+47         sp = Point(rect.x + rect.w, rect.y + rect.h – cr.y)
+48         cp1 = Point(rect.x + rect.w, rect.y + rect.h – cr.y + cr.y * 0.5)
+49         cp2 = Point(rect.x + rect.w – cr.x + cr.x * 0.5, rect.y + rect.h)
+50         ep = Point(rect.x + rect.w – cr.x, rect.y + rect.h)
+51         drawCurve(buffer, sp, cp1, cp2, ep, ...)
+52         // 모서리3
+53         sp = Point(rect.x + cr.x, rect.y + rect.h)
+54         cp1 = Point(rect.x + cr.x – cr.x * 0.5, rect.y + rect.h)
+55         cp2 = Point(rect.x, rect.y + rect.h – cr.y + cr.y * 0.5)
+56         ep = Point(rect.x, rect.y + rect.h – cr.y)
+57         drawCurve(buffer, sp, cp1, cp2, ep, ...)
+58         // 모서리4
+59         sp = Point(rect.x, rect.y + cr.y)
+60         cp1 = Point(rect.x, rect.y + cr.y – cr.y * 0.5)
+61         cp2 = Point(rect.x + cr.x – cr.x * 0.5, rect.y)
+62         ep = Point(rect.x + cr.x, rect.y)
+63         drawCurve(buffer, sp, cp1, cp2, ep, ...)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.17 경로 구축(객체 지향 버전)
+----------------------------------------------------------------------------------------
+01 /* 일반적으로 경로의 명령어는 이전 명령어의 위치를 기준으로 한다.
+02    가령, lineTo()의 시작점은 moveTo()에 해당한다. */
+03 
+04 path = UIPath():                        // 경로 객체
+05     .moveTo(x, y)                       // 경로의 시작점을 (x, y)로 이동
+06     .lineTo(x2, y2)                     // (x2, y2)까지 직선 그리기
+07     .curveTo(ctrlPt1, ctrlPt2, endPt)   // (x2, y2)에서 endPt까지 곡선 그리기
+08     /* close()를 호출하면 마지막 위치에서 시작 위치까지 선을 연결하여
+09        닫힌 도형, 즉 다각형을 완성한다. close()를 호출하지 않으면 마지막
+10        점을 끝으로 경로를 완성한다. */
+11     .close()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.18 경로 구축(데이터 직렬화 버전)
+----------------------------------------------------------------------------------------
+01 /* 도형 정보가 방대할 경우, 직렬화 데이터를 입력하면 효과적이다. */
+02 UIPathCommand cmds[] = {UIPathMoveTo, UIPathLineTo, UIPathCurveTo, ...}
+03 point pts[] = {pt1, pt2, ctrlPt1, ctrlPt2, endPt, ...}
+04 
+05 path = UIPath(cmds, pts)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.19 UIPath 명령어 수행 로직
+----------------------------------------------------------------------------------------
+01 /* UIPath는 도형의 윤곽선을 명령어로 전달받고 이들을 그리는 작업을 수행
+02    코드 3.17의 객체 지향 버전을 기반으로 구현 */
+03 UIPath implements UIShape:
+04     UIPathCommand cmds[] // 입력된 경로 명령어 큐
+05     ...
+06     /* 이하 명령어 추가 메서드. 각 명령어는 UIPathCommand 인터페이스를
+07        확장함으로써 cmds 목록에 추가할 수 있다. */
+08     moveTo(x, y):
+09         .cmds.push(UIPathCommandMoveTo(x, y))
+10
+11     lineTo(x, y):
+12         .cmds.push(UIPathCommandLineTo(x, y))
+13
+14     curveTo(control1, control2, end):
+15         .cmds.push(UIPathCommandCurveTo(ctrl1, ctrl2, end))
+16
+17     close():
+18         .cmds.push(UIPathCommandClose())
+19     ...
+20
+21     /* 입력(queueing)된 명령어를 순서대로 드로잉 수행 */
+22     override render(...):
+23         ...
+24         begin = cur = Point(0,0)
+25
+26         for cmd : .cmds
+27             switch cmd.type
+28                 UIPathCommandMoveTo:
+29                     begin = cur = cmd.get()
+30                 UIPathCommandLineTo:
+31                     to = cmd.get()
+32                 VectorEngine.drawLine(buffer, cur, to, ...)
+33                     cur = to
+34                 UIPathCommandCurveTo:
+35                     ctrl1, ctrl2, end = cmd.get()
+36                     VectorEngine.drawCurve(buffer, cur, ctrl1, ctrl2, end, ...)
+37                     cur = end
+38                 UIPathCommandClose:
+30                     VectorEngine.drawLine(buffer, cur, begin, ...)
+40                     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.20 UIPathCommand 구현 예시
+----------------------------------------------------------------------------------------
+01 /* UIPathCommand 인터페이스를 구현하여 CurveTo 명령어 구현
+02  * get()은 베지어 곡선에 필요한 두 제어점과 끝점 정보 반환 */
+03 UIPathCommandCurveTo implements UIPathCommand:
+04     Point ctrl1, ctrl2, end // CurveTo 데이터
+05
+06     constructor(ctrl1, ctrl2, end):
+07         .ctrl1 = ctrl1
+08         .ctrl2 = ctrl2
+09         .end = end
+10
+11     /* CurveTo 데이터 반환 */
+12     override get():
+13         return {.ctrl1, .ctrl2, .end}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.21 다각형 드로잉 로직
+----------------------------------------------------------------------------------------
+01 /*
+02  * EvenOdd 룰을 적용한 다각형을 칠하는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p cmds: UIPathCommand
+05 */
+06 VectorEngine.drawEvenOddPolygon(buffer, cmds, ...):
+07     ...
+08     /* 도형의 최소/최대 y는 (yMin, yMax) 윤곽선을 그리는 과정을 통해
+09        구했다고 가정(코드 3.19 참고) */
+10     for y : [yMin ~ yMax]
+11         // a. y 위치의 윤곽선 점들을 찾고 이들의 x 좌표 목록 반환
+12         xList = findIntersects(cmds, y)
+13
+14         // b. x 값 오름차순 정렬
+15         sortAscending(xList)
+16 
+17         // c. 준비한 x값을 이용하여 드로잉 수행
+18         for i : xList.size, i+=2
+19             xMin = xList[i]
+20             xMax = xList[i+1]
+21 
+22             // (x, y)에 해당하는 화소 그리기
+23             for x : [xMin ~ xMax]
+24                 bitmap[y * stride + x] = 0xffffffff
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.22 단색 채우기 예제
+----------------------------------------------------------------------------------------
+01 // 사각형 생성
+02 shape = UIRect():
+03     .geometry = {100, 100, 200, 200}
+04     // 도형을 채울 색상 지정 (R, G, B, A)
+05     .fill = UIFillSolid(100, 100, 255, 255):
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.23 단색 채우기 드로잉 로직
+----------------------------------------------------------------------------------------
+01 UIRect.render(context, ...):
+02     ...
+03     // 사용자 지정 색상(fill)을 VectorEngine으로 전달
+04     context.engine.drawRect(context.target, .rect, .geometry, .fill, ...)
+05 
+06 /*
+07  * 사각형 그리는 작업 수행
+08  * @p buffer: NativeBuffer
+09  * @p rect: Geometry
+10  * @p clipper: Geometry
+11  * @p fill: UIFill
+12 */
+13 VectorEngine.drawRect(buffer, rect, clipper, fill, ...):
+14     ...
+15     // 사각형 래스터 작업
+16     for y : rect.h
+17         for x : rect.w
+18             // 색상 정보는 fill에서 획득
+19             bitmap[y * stride + x] = fill.RGBA
+----------------------------------------------------------------------------------------
+
+
+
+
+@코드 3.24 선형 그래디언트 채우기 예제
+----------------------------------------------------------------------------------------
+01 // 모서리를 둥글린 사각형
+02 shape = UIRoundRect():
+03     .geometry = {0, 0, 200, 150}
+04     .cornerRadius = {50, 50}
+05 
+06 // 선형 그래디언트
+07 fill = UIFillLinearGradient():
+08     // 그래디언트 영역 지정(시작점, 끝점)
+09     .region = {0, 0, 150, 150}
+10
+11     // 그래디언트 색상 지정(위치: 0 ~ 1, 색상: R, G, B, A)
+12     .color.add(0.0, UIColor(100, 100, 255, 255))
+13     .color.add(0.5, UIColor(255, 255, 255, 255))
+14     .color.add(1.0, UIColor(255, 255, 0, 255))
+15 
+16 // 채우기 적용
+17 shape.fill = fill
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.25 선형 그래디언트 색상 결정
+----------------------------------------------------------------------------------------
+01 VectorEngine.drawRect(buffer, rect, clipper, fill, ...):
+02     ...
+03     // 사각형 래스터
+04     for y : rect.h
+05         for x : rect.w
+06             // 화소 색을 구하기 위해 color()에 좌표를 추가 전달
+07             bitmap[y * stride + x] = fill.color(x, y)
+08 
+09 /* 선형 그래디언트 색상 반환 */
+10 UIFillLinearGradient.color(x, y):
+11     // 개입 색상이 한 개면 단일 색상과 동일
+12     return .colors[0].RGBA if .colors.count == 1
+13
+14     /* 그래디언트 방향 벡터 (V).
+15        begin과 end는 fill.region()에서 전달받은 시작(P1)과 끝점(P3) */
+16     v = Vector2(.end - .begin)
+17 
+18     // 화소 위치(P4)를 가리키는 벡터 (V1)
+19     v1 = Vector2(x - .begin.x, y - .begin.y)
+20
+21     // 벡터 내적 식을 참고하여 V2 계산
+22     vNorm = Math.normalize(v)
+23     v1Norm = Math.normalize(v1)
+24     cosA = Math.dotProduct(vNorm, v1Norm) / (vNorm.length * v1Norm.length)
+25     v2 = v1 * cosA
+26 
+27     // 선형 구간 중 구하고자 하는 색상 위치(P)
+28     p = v2.length / v.length
+29
+30     // 현재 화소(P)가 속한 구간을 찾아서 최종 색상 계산
+31     for i : (.colors.count - 1)
+32         // UIFillColor는 색상(color)과 위치(pos) 정보 보유
+33         UIFillColor c1 = .colors[i]
+34         UIFillColor c2 = .colors[i + 1]
+35         p1 = Vector2(c1.pos - .begin).length
+36         p2 = Vector2(c2.pos - .begin).length
+37         // P가 속한 구간일 경우 P값 계산
+38         if p >= p1 and p < p2
+39   	       segmentPos = v2.length - p1
+40             val = segmentPos / Vector2(p2 - p1)
+41             // 두 색상을 보간 후 반환
+42             return c2.RGBA * val + c1.RGBA * (1 - val)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.26 원형 그래디언트 채우기 사용 예제
+----------------------------------------------------------------------------------------
+01 // 원 도형 생성
+02 shape = UICircle():
+03     .center = {200, 200}
+04     .radius = 100
+05
+06 // 원형 그래디언트
+07 fill = UIFillRadialGradient():
+08     // 원형 그래디언트의 반경
+09     .radius = 100
+10     // 원형 그래디언트의 초점 위치
+11     .focal = {200, 200}
+12     /* 그래디언트 색상 지정 (위치, RGBA 색상, 위치 범위는 0 ~ 1)
+13        0은 초점 위치, 1은 원형 외곽 지점 */
+14     .color.add(0.0, UIColor(100, 100, 255, 255))
+15     .color.add(0.5, UIColor(255, 255, 255, 255))
+16     .color.add(1.0, UIColor(100, 100, 255, 255))
+17
+18 // 채우기 적용
+19 shape.fill = fill
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.27 원형 그래디언트 색상 결정부
+----------------------------------------------------------------------------------------
+01 // 원형 그래디언트 색상 정보 반환
+02 UIFillRadialGradient.color(x, y):
+03     // 개입 색상이 한 개면 단일 색상과 동일
+04     return .colors[0].RGBA if .colors.count == 1
+05 
+06     // 현재 구하고자 하는 화소 위치를 가리키는 벡터
+07     v = Vector2(x - .focal.x, y - .focal.y)
+08 
+09     // 선형 구간 중 구하고자 하는 색상 위치
+10     p = v.length / .radius
+11
+12     // 현재 화소(P)가 속한 구간을 찾아서 최종 색상 계산
+13     for i : (.colors.count- 1)
+14         // UIFillColor는 색상(color)과 위치(pos) 정보 보유
+15         UIFillColor c1 = .colors[i]
+16         UIFillColor c2 = .colors[i + 1]
+17         p1 = Vector2(c1.pos - .focal).length
+18         p2 = Vector2(c2.pos - .focal).length
+19         // P가 속한 구간일 경우 P값 계산
+20         if p >= c1.pos and p < c2.pos
+21             segmentPos = v.length - p1
+22             val = segmentPos / (p2 - p1)
+23             //두 색상을 보간한 데이터 반환
+24             return c2.RGBA * val + c1.RGBA * (1- val)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.28 객체를 이용한 스트로크 적용 예제
+----------------------------------------------------------------------------------------
+01 shape = UILine():           // 선 생성
+02     .from = {100, 100}      // 시작점
+03     .to = {150, 150}        // 끝점
+04
+05 stroke = UIStroke():        // 스트로크 객체 생성
+06     .width = 10             // 스트로크 너비
+07     /* 스트로크 조인 스타일(그림 3.16 참조) */
+08     .join = UIStroke.JoinMiter
+09     /* 스트로크 라인캡 스타일(그림 3.17 참조) */
+10     .lineCap = UIStroke.LinecapButt
+11     .color = UIColor.Black  // 스트로크 색상
+12
+13 shape.stroke = stroke       // 스트로크를 도형에 적용
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.29 도형 속성을 통한 스트로크 적용 예제
+----------------------------------------------------------------------------------------
+01 /* 경로를 이용하여 선을 표현 */
+02 path = UIPath():
+03     // 스트로크 속성 지정
+04     .strokeWidth = 10
+05     .strokeJoin = UIStroke.JoinMiter
+06     .strokeLinecap = UIStroke.LinecapButt
+07     .strokeColor = UIColor.Black
+08     // 선 위치 정보
+09     .moveTo(100, 100)
+10     .lineTo(150, 150)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.30 곡선의 변을 구하는 로직
+----------------------------------------------------------------------------------------
+01 UIStroke.update(UIShape shape):
+02     /* 주어진 도형 타입(사각형, 원, 곡선, 경로 등)을 토대로 스트로크를 위한
+03        UIPathCommand를 구축. 이때 너비, 대시, 조인, 라인캡 등 스트로크
+04        특성을 추가로 반영한다. */
+05     UIPathCommand cmds[]
+06     Vector2 v1[3] //우측 변의 곡선을 구성하는 세 개의 점
+07     Vector2 v2[3] //좌측 변의 곡선을 구성하는 세 개의 점
+08     ...
+09     // 곡선 품질을 위해 segment 값을 조정할 수 있다.
+10     for t : 1, t + = segment
+11         /* 베지어 곡선(수식 3.5)을 이용하여 곡선 전체 구간(0 - 1)중 t에
+12            해당하는 좌표 반환 */
+13         p1 = bezierCurvePos(t - segment)
+14         p2 = bezierCurvePos(t)
+15 
+16         // 두 점으로부터 방향 벡터(접선) 계산
+17         v = Vector2(p2 - p1)
+18         Math.normalize(v)
+19 
+20         // 법선 벡터
+21        Math.rotate(v, 90)
+22        v.normailze()
+23 
+24         /* 법선 벡터를 스트로크 너비의 절반만큼 이동한 점 계산.
+25            이 벡터의 Negative는 반대편 변을 가리킨다. */
+26         v * = (width * 0.5)
+27 
+28         // v1, v2는 현재 곡선 위치에서의 양변을 가리키는 점
+29         v1[2] = p1 + v
+30         v2[2] = p1 - v
+31
+32         // 스트로크 시작을 닫힌 형태로 완성
+33         if t == 0
+34             cmds.push(UIPathCommandMoveTo(v1[2]))
+35             cmds.push(UIPathCommandLineTo(v2[2]))
+36 
+37         // 세 점(이전 구간의 두 점 포함)을 이용하여 새 곡선 완성
+38         if t > segment and ((t / segment) % 3 ) == 0
+39             // 스트로크 변1
+40             cmds.push(UIPathCommandMoveTo(v1[0]))
+41             cmds.push(UIPathCommandCurveTo(v1[1], v1[2]))
+42             // 스트로크 변2
+43             cmds.push(UIPathCommandMoveTo(v2[0]))
+44             cmds.push(UIPathCommandCurveTo(v2[1], v2[2]))
+45
+46         v1[0] = v1[1]
+47         v2[0] = v2[1]
+48         v1[1] = v1[2]
+49         v2[1] = v2[2]
+50 
+51     // 스트로크 끝이 닫힌 형태로 완성
+52     cmds.push(UIPathCommandMoveTo(v1[2]))
+53     cmds.push(UIPathCommandLineTo(v2[2]))
+54
+55     return cmds
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.31 스트로크 대시 패턴 적용 예제
+----------------------------------------------------------------------------------------
+01 // 배열을 이용하여 사용자가 대시 패턴을 직접 지정(단위는 화소) */
+02 dashPattern[] = {50.0,  // 선 구간
+03                  10.0,  // 생략 구간
+04                  10.0,  // 선 구간
+05                  10.0}  // 생략 구간
+06
+07 // 스트로크에 적용
+08 stroke.dashPattern = dashPattern
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.32 스트로크를 포함한 폴리곤 드로잉 로직
+----------------------------------------------------------------------------------------
+01 UIShape.update():
+02     /* 도형을 업데이트하는 시점에 스트로크 경로를 추가로 구축, UIShape.render()에서
+03        스트로크 경로를 렌더링한다. 최종적으로 도형과 스트로크는 VectorEngine을 통해
+04        래스터 작업을 완성한다. 이전 프레임으로부터 도형 속성이 변경되지 않았다면 stroke.cmds를 새로 갱신할
+05        필요가 없다. 스트로크 갱신은 코드 3.30을 참고한다. */
+06     .stroke.cmds = .stroke.update(self)
+07 
+08 UIShape.render(...):
+09     ...
+10     /* 다각형을 먼저 그린다. cmds를 구축하는 과정은 코드 3.19 참고.
+11        단, 채우기 규칙에 따른 NoneZero 또는 EvenOdd 그리기 기능을 호출해야 함 */
+12     VectorEngine.drawEvenOddPolygon(context.target, .cmds, .fill, ...)
+13     ...
+14     /* stroke.cmds를 토대로 VectorEngine을 이용하여 윤곽선 또는 선을 그린다.
+15        래스터 작업은 위 다각형과 일치한다. */
+16     VectorEngine.drawEvenOddPolygon(context.target, .stroke.cmds, ...)
+17     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.33 RLE 기반 다각형 래스터라이징
+----------------------------------------------------------------------------------------
+01 /* UIShape.update()로부터 호출하며 PathCommand로부터 RLEData 구축.
+02    코드 3.21는 주어진 경로로부터 래스터 작업을 직접 수행한다면
+03    본 메서드는 RLE를 구축하는 것이 차이 */
+04 VectorEngine.generateEvenOddRLE(cmds):
+05     /* 도형의 최소/최대 y는 (yMin, yMax) 도형의 윤곽선 정보로부터
+06        구한다고 가정 (코드 3.19 참고) */
+07     rleData = RLEData():
+08         .y = yBegin
+09         .length = yMax - yMin
+10 
+11     for y : [yMin ~ yMax]
+12         // a. y 위치의 윤곽선 점들을 찾고 이들의 x 좌표 목록 반환
+13         xList = findIntersects(cmds, y)
+14         // b. x값 오름차순 정렬
+15         sortAscending(xList)
+16         // c. 준비한 x값을 이용하여 RLESpan 구축
+17         for i : xList.size, i+=2
+18             span = RLESpan():
+19                 .x = xList[i]
+20                 .length = xList[i + 1] - xList[i]
+21                 rleData.spans.add(span)
+22 
+23     return rleData
+24
+25 UIShape.update():
+26     ...
+27     /* 경로가 변경되었고 Close 명령어가 추가된 닫힌 도형이며 채우기 정보가
+28        있다면 다각형으로 간주하여 RLE 생성. 단, 채우기 규칙에 따른 NoneZero
+29        또는 EvenOdd RLE 생성 작업을 호출해야 함 */
+30     .rleData = VectorEngine.generateEvenOddRLE(.cmds)
+31     ...
+32     /* 스트로크가 변경되었고 유효할 경우 스트로크 RLE 생성*/
+33     .stroke.cmds = .stroke.update() // 코드 3.30 참고
+34     .stroke.rleData = VectorEngine.genrateEvenOddRLE(.stroke.cmds)
+35     ...
+36 
+37 /* update()에서 구축한 RleData를 이용하여 렌더링 수행 */
+38 UIShape.render(...):
+39     ...
+40     // 도형을 그린다.
+41     VectorEngine.drawRLE(context.target, .rleData, clipper, fill, ...)
+42     ...
+43     // 스트로크를 그린다.
+44     VectorEngine.drawRLE(context.target, .stroke.rleData, ...)
+45     ...
+46
+47 /*
+48  * RLE 데이터를 이용하여 다각형 그리는 작업 수행
+49  * @p buffer: NativeBuffer
+50  * @p rleData: RLEData
+51  * @p clipper: Geometry
+52  * @p fill: UIFill
+53  */
+54 VectorEngine.drawRLE(buffer, rleData, clipper, fill, ...):
+55     yBegin = rleData.y
+56     yEnd = yBegin + rleData.length
+57     // y 영역 클리핑 수행
+58     ...
+59 
+60     for y : [yBegin ~ yEnd]
+61         // Span을 가져와 드로잉을 수행한다.
+62         span = rleData.spans[y - rleData.y]
+63         xBegin = span.x
+64         xEnd = xBegin + span.length
+65 
+66         // x 영역 클리핑 수행
+67         ...
+68 
+69         // (x, y)에 해당하는 화소 그리기
+70         for x : [xBegin ~ xEnd]
+71             bitmap[y * stride + x] = fill.color(x, y)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 3.34 AVX Intrinsic 예제(C++ 언어)
+----------------------------------------------------------------------------------------
+01 /* AVX (Advanced Vector Extension) intrinsic 명령어 사용을 위한 헤더 선언
+02    * gcc 컴파일러의 경우 -mavx 옵션을 지정해야 한다. */
+03 #include <immintrin.h>
+04 
+05 /*
+06  * 코드 3.6을 AVX를 적용한 사각형 그리는 작업으로 변경
+07  * 본 구현에서는 32바이트 데이터를 동시 처리
+08  * @p buffer: NativeBuffer
+09  * @p rect: Geometry
+10  */
+11 void avxDrawRect(buffer, rect, ...)
+12 {
+13     Pixel32 bitmap[] = buffer.map(); // 버퍼 메모리 접근
+14     stride = buffer.stride; // bitmap 버퍼 가로 크기
+15 
+16     // bitmap에서 사각형을 그릴 시작 위치
+17     bitmap += (rect.y * stride) + rect.x;
+18 
+19     // 32바이트 메모리에 색상 값 적재
+20     __m256i avxColor = _mm_set1_epi32(0xffffffff);
+21 
+22     // 벡터 프로세싱 메인 구현부
+23     for (int y = 0; y < h; ++y) {
+24         auto dst = bitmap + (y * stride);
+25
+26         // 256비트 레지스터는 32바이트 메모리 정렬 필요
+27
+28         // 1. 메모리 미정렬 구간 수행 (SIMD 미적용)
+29         auto align = (uintptr_t) dst & 0xf / 4;
+30         if (align > 0) {
+31             if ((N_32BITS_IN_128REG – align) > rect.w) align= rect.w;
+32             else align= N_32BITS_IN_128REG – align;
+33             for (int x = 0; x < align; ++x; ++dst) {
+34                 *dst= 0xffffffff;
+35             }
+36         }
+37         // 2. 메모리 정렬 구간 수행 (SIMD 적용)
+38         auto iterations = (rect.w – align) / N_32BITS_IN_128REG;
+39         auto avxFilled = iterations * N_32BITS_IN_128REG;
+40         auto avxDst = (__m128i*)dst;
+41         for (int x = 0; x < iterations; ++x, ++avxDst) {
+42             *avxDst = avxColor;
+43         }
+44         // 3. 남은 구간 수행
+45         auto leftover = rect.w – align – avxFilled;
+46         dst += avxFilled;
+47         while(leftover--) {
+48             *dst = 0xffffffff;
+49             ++dst;
+50         }
+51     }
+52 }
+----------------------------------------------------------------------------------------

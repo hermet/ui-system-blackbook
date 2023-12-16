@@ -1,0 +1,796 @@
+# UI System Blackbook Code by 박춘언 (hermetpark@gmail.com)
+
+
+@코드 5.1 텍스트 폰트 설정
+----------------------------------------------------------------------------------------
+01 guideText = UIText():
+02     .text = "Search Google or type URL"     // 텍스트 설정
+03     .color = UIColor.LightGray              // 텍스트 색상
+04     .geometry = {90, 310, 130, 40}          // 텍스트 위치 및 크기
+05
+06     /* 이하 텍스트 폰트 설정. 사용자가 폰트를 설정하지 않으면 기본 폰트 설정 */
+07     .fontName = "Arial"                     // 폰트 이름
+08     .fontSize = 12                          // 폰트 크기 (단위는 포인트)
+09     .fontStyle = UIFont.StyleItalic         // 폰트 스타일
+10     .fontWeight = UIFont.WeightBold         // 폰트 두께
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.2 폰트 크기 단위 지정(CSS)
+----------------------------------------------------------------------------------------
+01 font-size: 0.75em;     // 부모 요소의 폰트 대비 75% 크기로 출력
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.3 폰트 크기 단위 지정(안드로이드)
+----------------------------------------------------------------------------------------
+01 android:textSize="12dp"    // dp = px * (160/디스플레이 DPI값)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.4 볼드체 가중치 지정 예(CSS)
+----------------------------------------------------------------------------------------
+01 p.normal {
+02     font-weight: normal; // Normal, "wght" = 400
+03 }
+04 
+05 p.normal {
+06     font-weight: bold;   // bold, "wght" = 700
+07 }
+08 
+09 p.normal {
+10     font-weight: 900;    // black, "wght" = 900
+11 }
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.5 아스키 코드 텍스트 입력
+----------------------------------------------------------------------------------------
+01 // 아스키 기반의 두 텍스트는 실제 동일한 데이터로 해석할 수 있다.
+02 text1 = {0x41, 0x42, 0x43, 0x44, 0x61, 0x62, 0x63, 0x64}
+03 text2 = “ABCDabcd”
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.6 cmap 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 //초성
+02 FIRST[] = {‘ㄱ’, ‘ㄲ’, ‘ㄴ’, ‘ㄷ’, ‘ㄸ’, ‘ㄹ’, ‘ㅁ’, ‘ㅂ’, ‘ㅃ’, ‘ㅅ’,
+              ‘ㅆ’, ‘ㅇ’, ‘ㅈ’, ‘ㅉ’, ‘ㅊ’, ‘ㅋ’, ‘ㅌ’, ‘ㅍ’, ‘ㅎ’}
+03 
+04 //중성
+05 MIDDLE[] = {‘ㅏ’, ‘ㅐ’, ‘ㅑ’, ‘ㅒ’, ‘ㅓ’, ‘ㅔ’, ‘ㅕ’, ‘ㅖ’, ‘ㅗ’, ‘ㅘ’,  
+               ‘ㅙ’, ‘ㅚ’, ‘ㅛ’, ‘ㅜ’, ‘ㅝ’, ‘ㅞ’, ‘ㅟ’, ‘ㅠ’, ‘ㅡ’, ‘ㅢ’,
+               ‘ㅣ’}
+06
+07 //종성
+08 LAST[] = {‘ ’, ’ㄱ’, ‘ㄲ’, ‘ㄳ’, ‘ㄴ’, ‘ㄵ’, ‘ㄶ’, ‘ㄷ’, ‘ㄹ’, ‘ㄺ’, ‘ㄻ’, 
+             ‘ㄼ’, ‘ㄽ’, ‘ㄾ’, ‘ㄿ’, ‘ㅀ’, ‘ㅁ’, ‘ㅂ’, ‘ㅄ’, ‘ㅅ’, ‘ㅆ’, ‘ㅇ’, 
+             ‘ㅈ’, ‘ㅊ’, ‘ㅋ’, ‘ㅌ’, ‘ㅍ’, ‘ㅎ’}
+09 
+10 // 초성(first), 중성(middle), 종성(last)을 입력으로 받고
+11 // 이를 결합한 유니코드 데이터 반환
+11 genKorUnicode(first, middle, last):
+12     val = 0 // 최종 데이터
+13
+14     // 초성
+15     for i : FIRST.last()
+16         if first == FIRST[i]
+17             val += i * 588
+18             break
+19
+20     // 중성
+21     for i : MIDDLE.last()
+22         if middle == MIDDLE[i]
+23             val += i * 20
+24             break
+25
+26     // 종성은 데이터가 있을 경우에만 합성
+27     if last.valid()
+28         for i : LAST.last()
+29             if last == LAST[i]
+30                 val += i
+31                 break
+32
+33     return val + 44032
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.7 cmap 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <cmap>
+02     <tableVersion version="0"/>
+03     <!-- 플랫폼별 문자 코드 테이블 제공. 유니코드용 -->
+04     <cmap_format_12 platformID="0" platEncID="4" format="12"
+05                     reserved="0" length="2404" language="0"
+06                     nGroups="199">
+07         <map code="0x20" name="space"/> <!-- SPACE -->
+08      <map code="0x21" name="exclam"/> <!-- EXCLAMATION MARK -->
+09      <map code="0x22" name="quotedbl"/> <!-- QUOTATION MARK -->
+10         ...
+11         <map code="0x41" name="A"/> <!-- LATIN CAPITAL LETTER A -->
+12         <map code="0x42" name="B"/> <!-- LATIN CAPITAL LETTER B -->
+13         <map code="0x43" name="C"/> <!-- LATIN CAPITAL LETTER C -->
+14         <map code="0x44" name="D"/> <!-- LATIN CAPITAL LETTER D -->
+15         ...
+16     </cmap_format_12>
+17
+18     <!-- 매킨토시용 -->
+19     <cmap_format_6 platformID="1" platEncID="0" language="0">
+20         ...
+21     </cmap_format_6>
+22
+23     <!-- 윈도우용 -->
+24     <cmap_format_4 platformID="3" platEncID="1" language="0">
+25         ...
+26     </cmap_format_4>
+27     ...
+28 </cmap>
+----------------------------------------------------------------------------------------
+
+
+
+
+@코드 5.8 loca 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <GlyphOrder>
+02     <GlyphID id="0" name=".notdef"/>
+03     <GlyphID id="1" name=".null"/>
+04     ...
+05     <GlyphID id="36" name="A"/> <!-- 'A' 글리프 정보는 36번째에 기록 -->
+06     <GlyphID id="37" name="B"/>
+07     ...
+08 </GlyphOrder>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.9 윤곽점 정보 해석
+----------------------------------------------------------------------------------------
+01 for idx : numberOfContours
+02     x = xCoordinates[endPtsContours[idx]]
+03     y = yCoordinates[endPtsContours[idx]]
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.10 알파벳 ‘A’ 글리프 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <glyf>
+02     <!-- FreeSans.ttf 알파벳 A 윤곽 정보
+03          cmap에서 확인한 이름과 동일한 TTGlyph를 색인할 수 있다.
+04          본 예제에서는 36번째 글리프 정보에 해당 -->
+05     <TTGlyph name="A" xMin="15" yMin="0" xMax="651" yMax="729">
+06     <!-- A의 외곽선 -->
+07     <contour>
+08         <pt x="472" y="219" on="1"/>
+09         <pt x="191" y="219" on="1"/>
+10         <pt x="114" y="0" on="1"/>
+11         <pt x="15" y="0" on="1"/>
+12         <pt x="275" y="729" on="1"/>
+13         <pt x="395" y="729" on="1"/>
+14         <pt x="651" y="0" on="1"/>
+15         <pt x="547" y="0" on="1"/>
+16     </contour>
+17     <!-- A의 내곽선 -->
+18     <contour>
+19         <pt x="446" y="297" on="1"/>
+20         <pt x="334" y="629" on="1"/>
+21         <pt x="214" y="297" on="1"/>
+22     </contour>
+23     </TTGlyph>
+24     ...
+25 </glyf>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+코드 5.11 경로를 이용한 글리프 렌더링
+----------------------------------------------------------------------------------------
+01 /* 경로를 이용한 글리프 A 그리기 */
+02 path = UIPath():
+03     .geometry(xMin, yMin, xMax - xMin, yMax - yMin)
+04     .color = UIColor.Black
+05     // 외곽선 시작점
+06     .moveTo(472 - xMin, 219 - yMin)
+07     .lineTo(191 - xMin, 219 - yMin)
+08     .lineTo(114 - xMin, 0 - yMin)
+09     .lineTo(15 - xMin, 0 - yMin)
+10     .lineTo(275 - xMin, 729 - yMin)
+11     .lineTo(395 - xMin, 729 - yMin)
+12     .lineTo(651 - xMin, 0 - yMin)
+13     .lineTo(547 - xMin, 0 - yMin)
+14     // 내곽선 시작점
+15     .moveTo(446 - xMin, 297 - yMin)
+16     .lineTo(334 - xMin, 629 - yMin)
+17     .lineTo(214 - xMin, 297 - yMin)
+18     .close()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.12 off-curve를 이용한 2차 베지어 곡선 표현
+----------------------------------------------------------------------------------------
+01 <!-- 코드로 치환할 경우 다음 호출: -->
+02    path.moveTo(623 - xMin, 93 - yMin)
+03    path.curveTo(519 - xMin, 23 - yMin, 374 - xMin, 23 - yMin) -->
+04 <pt x="623" y="93" on="1"/>
+05 <pt x="519" y="-23" on="0"/>
+06 <pt x="374" y="-23" on="1"/>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.13 두 제어점을 가진 3차 베지어 곡선 정보
+----------------------------------------------------------------------------------------
+01 <pt x="394" y="59" on="1"/>
+02 <pt x="494" y="59" on="0"/>
+03 <pt x="623" y="185" on="0"/>
+04 <pt x="623" y="283" on="1"/>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.14 3차 베지어 곡선을 이용한 곡선 구현
+----------------------------------------------------------------------------------------
+01 // 직전에 on-curve점이 존재한다면 moveTo() 대신 lineTo() 호출
+02 path.moveTo(394 - xMin, yMax - 59 - yMin)
+03 // 제어점1, 제어점2, 끝점
+04 path.curveTo(494 - xMin, 59 - yMin, 623 - xMin, 185 - yMin, 623 - xMin, 283 - yMin)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.15 2차 베지어 곡선을 이용한 곡선 구현
+----------------------------------------------------------------------------------------
+01 // 중간의 On-Curve점(558.5, 122)을 생성하여 적용
+02 path.moveTo(394 - xMin, yMax - 59 - yMin)
+03 path.curveTo(494 - xMin, 59 - yMin, 558.5 - xMin, 122 - yMin)
+04 path.curveTo(623 - xMin, 185 - yMin, 623 - xMin, 283 - yMin)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.16 그리드 윤곽점을 캔버스 공간으로 변환하는 로직
+----------------------------------------------------------------------------------------
+01 /*
+02  * 글리프 윤곽점 크기 변환. 그리드 공간의 윤곽점을 화소 공간으로
+03  * 변환하고 요청 받은 폰트 크기에 맞게 재조정(Scaling) (5.2.3절 참조)
+04  * @p in: Point (글리프 윤곽점)
+05  * @p pointSize: var (폰트 크기)
+06  * @p dpi: var (Density Per Inch)
+07  * @p em: var (TTF 기본값: 2048)
+08  */
+09 gridToPixel(in):
+10     return in * ((pointSize * (dpi / 72)) / em)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.17 그리드 윤곽점을 캔버스 공간으로 변환
+----------------------------------------------------------------------------------------
+01 // 샘플 값
+02 pointSize = 12
+03 dpi = 96
+04 em = 2048
+05 
+06 // 코드 5.9에서 수행한 원점 변환은 생략한다.
+07 path.moveTo(gridToPixel(394), gridToPixel(59))
+08 path.curveTo(gridToPixel(494), gridToPixel(59), gridToPixel(558.5), gridToPixel(122))
+09 path.curveTo(gridToPixel(623), gridToPixel(185), gridToPixel(623), gridToPixel(283))
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.18 cvt 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <!-- 항목별 수치는 이를 참조하는 내장 프로그램에 따라 다르며
+02      힌팅 목적에 따라 캡 높이, 초과 영역 거리, 어센더 높이 등 정보로
+03      해석할 수 있다. 가령 1번 인덱스 값은 기준선 위치, 2번 인덱스 값은
+04      하단 정렬 힌팅 영역 위치, 3번 인덱스 값은 하단 정렬 초과 영역 위치 등... -->
+05 <cvt>
+06     <cv index="0" value="0"/>
+07     <cv index="1" value="524"/>
+08     <cv index="2" value="700"/>
+09     <cv index="3" value="729"/>
+10     ...
+11     <cv index="36" value="42"/>
+12 </cvt>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.19 글리프 O 내장 프로그램 코드
+----------------------------------------------------------------------------------------
+01 <TTGlyph name="O" xMin="40" yMin="-23" xMax="744" yMax="741">
+02     <contour> ... </contour>
+03     <instructions>
+04         <assembly>
+05             SVTCA[Y]
+06             MIAP[R], 3,3
+07             MIAP[R], 9,9
+08             SRP0[], 3
+09             MIRP[m>RBl], 20, 73
+10             SRP0[], 9
+11             MIRP[m>RBl], 15, 73
+12             SVTCA[X]
+13             SRP0[], 23
+14             MDRP[M>RWh], 0
+15             MDRP[MRBl], 12, 69
+16             SRP0[], 24
+17             MDRP[M>RWh], 6
+18             MDRP[MRBl], 18, 69
+19             IUP[X]
+20             IUP[Y]
+21         </assembly>
+22     </instructions>
+23 </TTGlyph>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.20 BASE 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <BASE> <!-- OTF 전용 -->
+02     <Version value="1.0"/>
+03     <!—수평 텍스트를 위한 정보. 수직 텍스트의 경우 VertAxis 확인-->
+04     <HorizAxis>
+05         <!-- 본 폰트에서 지원하는 기준선 종류 -->
+06         <BaseTagList>
+07             <BaselineTag index="0" value="hang"/> <!-- 행잉 -->
+08             <BaselineTag index="1" value="ideo"/> <!-- 표의 문자 -->
+09             <BaselineTag index="2" value="romn"/> <!-- 로만 -->
+10         </BaseTagList>
+11         <BaseScriptList>
+12             <BaseScriptRecord index="0">
+13                 <!-- 본 폰트 데이터 중 키릴 계열 스크립트 세부 정보 -->
+14                 <BaseScriptTag value="cyrl"/>
+15                 <BaseScript>
+16                     <!-- BaseTagList에 나열된 기준선의 위치 정보 기록 -->
+17                     <BaseValues>
+18                         <!-- 키릴 계열 기본 정책은 로만 기준선 적용 -->
+19                         <DefaultBaselineIndex value="2"/>
+20                         <!-- 행잉 기준선 적용 시 1500만큼 y값 이동 -->
+21                         <BaseCoord index="0" Format="1">
+22                             <Coordinate value="1500"/>
+23                         </BaseCoord>
+24                         <!-- 표의 문자 기준선 적용 시 -288만큼 y값 이동 -->
+25                         <BaseCoord index="1" Format="1">
+26                             <Coordinate value="-288"/>
+27                         </BaseCoord>
+28                         <!-- 로만 기준선 적용 시 0만큼 y값 이동 -->
+29                         <BaseCoordOffset index="2" Format="1">
+30                             <Coordinate value="0"/>
+31                         </BaseCoord>
+32                     </BaseValues>
+33                 </BaseScript>
+34                 <!-- 본 폰트 데이터 중 라틴 계열 스크립트 세부 정보 -->
+35                 <BaseScriptTag value="latn"/>
+36                 ...
+37                 </BaseScriptTag>
+38                 ...
+39             </BaseScriptRecord>
+40         </BaseScriptList>
+41     </HorizAxis>
+42     ...
+43 </BASE>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.21 hhea 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <hhea> <!-- Horizontal Header Table -->
+02     ...
+03     <ascent value="900"/>       <!-- 최상단 지점 -->
+04     <descent value="-200"/>     <!-- 최하단 지점 -->
+05     <lineGap value="100"/>      <!-- 행 간격 -->
+06     ...
+07 </hhea>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+코드 5.22 hmtx 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <hmtx> <!-- Horizontal Metrics Table -->
+02     ...
+03     <!-- advanceWidth 대신 width로 이름을 축약했다.
+04          lsb는 "Left Side Bearing"의 약자로 좌측 베어링 값을 가리킴 -->
+05     <mtx name="A" width="666" lsb="15"/>
+06     <mtx name="B" width="664" lsb="80"/>
+07     <mtx name="C" width="="40"/>
+08     <mtx name="D" width="698" lsb="80"/>
+09     ...
+10 </hmtx>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.23 커닝 테이블 값 참고
+----------------------------------------------------------------------------------------
+01 TJkernSize = kernTable['T']['J']; // value = -10
+02 JTkernSize = kernTable['J']['T']; // value = 0
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.24 kern 정보(FreeSans)
+----------------------------------------------------------------------------------------
+01 <kern>
+02     <!-- 버전 정보, 0: TrueType, OpenType, 1: AAT -->
+03     <version value="0"/>
+04     <kernsubtable coverage="1" format="0">
+05         <pair l="T" r="y" v="-10"/> <!-- l:left, r:right, v:value -->
+06         <pair l="T" r="J" v="-10"/>
+07         ...
+08     </kernsubtable>
+09 </kern>
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.25 글리프 비트맵 생성 과정
+----------------------------------------------------------------------------------------
+01 // 8비트 데이터 버퍼, 글리프 이미지 소스로 활용
+02 Grayscale8 bitmap[64, 64]
+03
+04 /* bitmap의 각 화소는 256개의 색상을 표현할 수 있으며
+05    0에 가까울수록 투명하고 255에 가까울수록 불투명하다.
+06    이해를 돕기 위해 여기서는 bitmap에 임의의 값을 채운다. */
+07 for y : 64
+08     for x : 64
+09         bitmap[y, x] = value
+10
+11 // bitmap을 입력값으로 Grayscale8 포맷의 64 x 64 크기의 이미지 생성
+12 glyphImg = Image(bitmap, 64, 64, GRAYSCALE8, ...)
+13 ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.26 글리프 비트맵 출력 로직
+----------------------------------------------------------------------------------------
+01 RGBA32 textColor = 0x0000ffff // 청색 텍스트 출력
+02 Grayscale8 srcBuffer[] = glyphImg.map()
+03 RGBA32 dstBuffer[] = dst.map()
+04 
+05 for y : glyphImg.height
+06     for x : glyphImg.width
+07         // 출력하고자 하는 텍스트 색상과 글리프 합성
+08         RGBA32 temp = UIAlphaBlend(srcBuffer[y * glyphImg.stride + x], textColor)
+09         // 글리프와 배경 이미지 합성. UIAlphaBlend() 로직은 코드 4.18 참고
+10         dstBuffer[x] = UIAlphaBlend(temp, dstBuffer[y * dst.stride + x])
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.27 32비트 색상에 알파 값 적용
+----------------------------------------------------------------------------------------
+01 /*
+02  * 알파 블렌딩 구현(식: SrcRGB * Alpha)
+03  * src는 미리 자신의 알파값을 적용한 데이터에 해당(2.1.2절 참고)
+04  * @p alpha: Graysale8
+05  * @p src: RGBA32
+06 */
+07 UIAlphaBlend implements UICompositor:
+08     override comp(alpha, src):
+09         Pixel32 out
+10         out.r = src.r * (alpha / 255)
+11         out.g = src.g * (alpha / 255)
+12         out.b = src.b * (alpha / 255)
+13         out.a = src.a * (alpha / 255)
+14         return out
+----------------------------------------------------------------------------------------
+
+
+
+
+
+코드 5.28 서브픽셀 화소 계산
+----------------------------------------------------------------------------------------
+01 /*
+02  * 글리프 서브픽셀 렌더링 수행.
+03  * 색상을 혼합하지 않은, 8비트 그레이스케일 글리프를 출력
+04  * @p glyph: NativeBuffer
+05  * @p dst: NativeBuffer
+06  * @p dx: var (글리프 위치 x)
+07  * @p dy: var (글리프 위치 y)
+08 */
+09 ImageRasterizer.drawGlyph(glyph, dst, dx, dy):
+10
+11     // 버퍼 메모리 접근
+12     Grayscale8 glyphBitmap[] = glyph.map()
+13     RGBA32 dstBitmap[] = dst.map()
+14
+15     // 소수점 위치 파악
+16     xFraction = dx - floor(dx)
+17     yFraction = dy - floor(dy)
+18
+19     // 코드 간결성을 위해 범위 처리(out of range)는 생략
+20     for y : glyph.height
+21         for x : glyph.width
+22             // S1 화소
+23             value = glyphBitmap[y * glyph.stride + x]
+24
+25             R[0] = value * weight(xFraction, 1/3) * (1 - yFraction)
+26             G[0] = value * weight(xFraction, 2/3) * (1 - yFraction)
+27             B[0] = value * weight(xFraction, 3/3) * (1 - yFraction)
+28
+29             // S2 화소
+30             value = glyphBitmap[y * glyph.stride + (x - 1)]
+31
+32             R[1] = value * weight2(xFraction, 0/3) * (1 - yFraction)
+33             G[1] = value* weight2(xFraction, 1/3) * (1 - yFraction)
+34             B[1] = value* weight2(xFraction, 2/3) * (1 - yFraction)
+35
+36             // S3 화소
+37             value = glyphBitmap[(y - 1) * glyph.stride + x]
+38
+39             R[2] = value * weight(xFraction, 1/3) * yFraction
+40             G[2] = value * weight(xFraction, 2/3) * yFraction
+41             B[2] = value * weight(xFraction, 3/3) * yFraction
+42
+43             // S4 화소
+44             value = glyphBitmap[(y - 1) * glyph.stride + (x - 1)]
+45
+46             R[3] = value * weight2(xFraction, 0/3) * yFraction
+47             G[3] = value * weight2(xFraction, 1/3) * yFraction
+48             B[3] = value * weight2(xFraction, 2/3) * yFraction
+49
+50             // 최종 화소
+51             sR = R[0] + R[1] + R[2] + R[3]
+52             sG = G[0] + G[1] + G[2] + G[3]
+53             sB = B[0] + B[1] + B[2] + B[3]
+54
+55             // 대상 버퍼와 혼합
+56             d = dstBitmap[(dy + y) * dst.stride + (dx + x)]
+57
+58             dR = (d >> 24) & 0xff
+59             dG = (d >> 16) & 0xff
+60             dB = (d >> 8) & 0xff
+61             dA = d & 0xff
+62
+63             dR = sR + UIAlphaBlend(dR, 255 - sR)
+64             dG = sG + UIAlphaBlend(dG, 255 - sG)
+65             dB = sB + UIAlphaBlend(dB, 255 - sB)
+66
+67             result = (dR << 24) || (dG << 16) || (dB << 8) || dA
+68             dstBitmap[(dy + y) * dst.stride + (dx + x)] = result
+69
+70 // R,G,B 채널에 적용할 가중치 계산
+71 weight(fraction, range):
+72     w = 255 * (range - fraction) * 3
+73     // clamp(0 ~ 255)
+74     return 255 if w > 255
+75     return 0 if w < 0
+76     return w
+77
+78 // 인접 R,G,B 채널에 적용할 가중치 계산
+79 weight2(fraction, range):
+80     w = 255 * (fraction - range) * 3
+81     return (w > 0) ? w : 0
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.29 캐릭터 맵 텍스처 준비 과정
+----------------------------------------------------------------------------------------
+01 /*
+02  * TextRenderer는 UIText로부터 호출되며 텍스트 렌더링 관련 기능 수행
+03  * prepare()는 렌더링 전 수행되는 텍스트 렌더링 준비 단계
+04  * 출력할 글리프 목록을 준비하여 반환
+05  * FontEngine 초기화 작업은 사전에 완료했다고 가정
+06  *
+07  * @p text: string
+08  * @p fontName: string
+09  * @p fontStyle: string
+10  * @p fontSize: Var
+11 */
+12 TextRenderer.prepare(text, fontName, fontStyle, fontSize, ...):
+13     List glyphList     // 출력할 글리프 목록
+14     var pchar          // 이전 처리한 문자
+15     ...
+16     // 출력할 폰트 설정
+17     ctx = FontEngine.set(fontName, fontStyle, fontSize ...)
+18
+19     // 문자열을 순서대로 순회하며 출력할 다음 글리프 정보를 구함
+20     for char : Text
+21         // 폰트 엔진으로부터 글리프 정보 생성 & 반환
+22         glyphInfo = FontEngine.glyphInfo(ctx, char, ...)
+23
+24         // render() 시점에 참조해야 하므로 리스트에 기록(코드 5.30 참고)
+25         glyphList.append(glyphInfo)
+26 
+27         // 이전 글리프와의 커닝 값 계산 및 반영
+28         if pChar.valid()
+29             glyphInfo.offset += FontEngine.kernSize(ctx, pChar, char, ...)
+30
+31         pChar = char
+32
+33         /* 폰트 정보를 고유키로 사용하여 CharMapMgr로부터
+34            현재 글리프(char)의 텍스처(CharTexture) 정보 반환 */
+35         glyphInfo.texture = CharMapMgr.get(fontName, fontStyle, fontSize, char, glyphInfo.size)   
+36         // 글리프가 이미 기록된 경우
+37        if (glyphInfo.texture.cached) continue
+38
+39      // 글리프가 기록되어 있지 않으면, 글리프 이미지 생성
+40      Grayscale8 glyphImg[glyphInfo.size]
+41      FontEngine.drawGlyph(ctx, char, glyphInfo, glyphImg, 
+42                           glyphInfo.size, GRAYSCALE8, ...)
+43
+44      // 글리프 이미지를 텍스처의 지정 위치(texture.uv)에 기록
+45      glyphInfo.texture.write(glyphImg, glyphInfo.size, ...)
+46
+47      return glyphList
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.30 텍스트 렌더링
+----------------------------------------------------------------------------------------
+01 /*
+02  * prepare()에서 준비한 glyphList를 이용하여 텍스트 렌더링 수행
+03  * @p buffer: 글리프를 출력할 대상 버퍼
+04  * @p glyphList: 출력할 글리프 목록
+05  * @p geometry: 텍스트 출력 영역
+06 */
+07 TextRenderer.drawText(buffer, glyphList, geometry, ...):
+08     ...
+09     for glyphInfo : glyphList
+10         // 텍스트 출력 기준 위치로부터 각 글리프 위치 결정
+11         position = geometry.position + glyphInfo.offset
+12         texture = glyphInfo.texture
+13         // 글리프 역시 이미지에 해당하므로 이미지 래스터 과정을 통해 출력
+14         ImageRasterizer.draw(buffer, position, geometry, texture.id,
+                                texture.uv, texture.size, ...)
+15         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 5.31 균일 격자 기반의 캐릭터 맵 텍스처 캐싱 주요 로직
+----------------------------------------------------------------------------------------
+01 /*
+02  * 요청한 폰트 스타일과 글리프를 위한 CharTexture 반환 (코드 5.29, 35행에서 호출)
+03  * @p fontName: string
+04  * @p fontStyle: string
+05  * @p fontSize: var
+06  * @p char: var
+07  * @p size: Size
+08 */
+09 CharMapMgr.get(fontName, fontStyle, fontSize, char, size):
+10     // 폰트명, 폰트 스타일, 폰트 크기를 조합하여 고유의 키 값 생성
+11     key = UniqueKey(fontName + fontStyle, fontSize)
+12
+13     // 보유한 캐릭터 맵 텍스처 목록을 순회하며 요청한 스타일의 캐릭터 텍스처 정보 반환
+14     for cmMap : .charMapTextures
+15         if cmMap.key == key
+16             // 캐릭터 맵 텍스처에 글리프가 캐싱되어 있는 경우 텍스처(CharTexture) 반환
+17             texture = cmMap.request(char)
+18             return texture if texture.valid()
+19
+20     // 글리프가 캐싱되어 있지 않은 경우 캐릭터 맵 텍스처에 새로 캐싱 시도
+21     for cmMap : .charMapTextures
+22         if cmMap.key == key
+23             texture = cmMap.assign(char, size)
+24             return texture if texture.valid()
+25
+26     // 주어진 스타일의 캐릭터 맵 텍스처가 전혀 없는 경우 새로 생성
+27     cmMap = CharMapTexture(CHARMAP_WIDTH, CHARMAP_HEIGHT, …) 
+28     // 새로 생성한 캐릭터 맵 텍스처 등록
+29     .charMapTextures.add(charMap)
+30     // 캐릭터 맵에 글리프 등록 및 반환
+31     return cmMap.assign(char, size)
+32
+33 /*
+34  * 캐릭터 맵 텍스처로부터 요청한 글리프가 캐싱된 텍스처(CharTexture) 반환
+35  * CharMapTexture는 생성 시점에 CHARMAP_WIDTH x CHARMAP_HEIGHT 크기의
+36  * 텍스처를 생성하고, 이를 균등하게 격자로 분할하여 구조화(cells)한다
+37  * @p char: var
+38 */
+39 CharMapTexture.request(char):
+40     // 캐릭터 맵 텍스처를 탐색하고 기존에 캐시된 캐릭터 공간 정보 반환
+41     for cell : .cells
+42         if cell.assigned and cell.char == char
+43         return CharTexture(cmTexture.id, cell.uv, cell.size)
+44     // 유효한 캐릭터 텍스처 없음
+45     return invalid
+46
+47 /*
+48  * 캐릭터 맵 텍스처에 새 글리프 공간(cell) 추가
+49  * @p char: var
+50  * @p size: Size
+51 */
+52 CharMapTexture.assign(char, size):
+53     // 캐릭터 맵 텍스처를 탐색하고 비어있는 공간(cell)의 텍스처 정보 반환
+54     for cell : .cells
+55         continue if cell.assigned
+56         cell.char = char
+57         cell.size = size
+58         cel.assigned = true //해당 공간을 사용 중 상태로 변경
+59         return CharTexture(cmTexture.id, cell.uv, cell.size)
+60
+61     // 모든 공간(cell)이 꽉 찬 경우
+62     return invalid 
+63
+64 /*
+65  * 주어진 텍스처 공간에 글리프 이미지 기록
+66  * @p srcBitmap: Grayscale8[]
+67  * @p size: Size
+68 */
+69 CharTexture.write(srcBitmap, size):
+70     // CharTexture가 소유한 텍스처 소스 데이터(CharMapTexture와 공유)
+71     Grayscale8 dstBitmap[] = .texSrc.map()
+72
+73     // 글리프 비트맵 이미지를 텍스처 버퍼의 UV 위치에 복사
+74     for y : size.h
+75         for x : size.x
+76             dstBitmap[(cell.uv.v + y) * .texSrc.stride + (cell.uv.u + x)]
+77             = srcBitmap[y * size.w + x]
+78     //텍스처의 해당 공간은 캐싱된 상태로 변경 (코드 5.29의 37행 참고)
+79     .cached = true
+80     ...
+----------------------------------------------------------------------------------------

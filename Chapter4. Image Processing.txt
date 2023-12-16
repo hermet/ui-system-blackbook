@@ -1,0 +1,719 @@
+# UI System Blackbook Code by 박춘언 (hermetpark@gmail.com)
+
+
+@코드 4.1 후보 이미지 로더 결정
+----------------------------------------------------------------------------------------
+01 // 해시로 구성한 보조 이미지 로더
+02 Hash imageLoaders
+03 ...
+04 ImageLoader.findImageLoader(file):
+05 
+06     /* 파일 확장명을 비교하여 보조 이미지 로더 결정
+07      * 여기서 extension은 png 값을 갖는다고 가정 */
+08    string extension = File.getExtensionName(file)
+09     ImageLoader loader = imageLoaders.get(extension)
+10
+11     if loader.valid() and loader.open(file) == Success
+12         return loader
+13 
+14     /* 파일 확장명으로부터 후보 이미지 로더를 찾지 못한 경우
+15        준비된 로더 목록을 순회하며 불러오기를 시도 */
+16     for loader : imageLoaders
+17         if loader.open(file) == Success
+18             return loader
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.2 이미지 비동기 로딩
+----------------------------------------------------------------------------------------
+01 func(UIImage image, …):
+02     // func()은 이미지 불러오는 작업이 끝난 경우 호출된다.
+03     // 필요하다면, 이 시점에 추가 작업을 수행할 수 있다.
+04     // 예를 들어, 썸네일을 제거하고 본 이미지를 보여줄 수 있다.
+05     ...
+06     img = UIImage():
+07         // 비동기 로딩 기능을 활성화하여 이미지를 불러오도록 요청
+08         .open(“car.png”, async=true)
+09         // 이 경우 이미지 불러오는 작업이 끝났다는 신호도 필요하다.
+10         .EventLoadFinished += func
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.3 RGBA -> BGRA 변환
+----------------------------------------------------------------------------------------
+01 convertToBGRA(RGBA32 RGBA):
+02     // 각 채널 정보 분리
+03     R = (RGBA >> 24) & 0xff
+04     G = (RGBA >> 16) & 0xff
+05     B = (RGBA >> 8) & 0xff
+06    A = 0xff
+07
+08     // 분리한 정보를 BGRA 형태로 재조합
+09     BGRA = (B << 24) | (G << 16) | (R << 16) | A
+10
+11     return BGRA
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.4 원시 데이터 색 공간 정보 명시
+----------------------------------------------------------------------------------------
+01 // 8비트 화소의 그레이스케일 원시 이미지 정보가 담긴 배열
+02 Grayscale8 bitmap[]
+03 ...
+04 image = UIImage():
+05     .data = bitmap
+06     .colorspace = UIColorspace.Grayscale8
+07     .size = Size(1920, 1080)
+08     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.5 Grayscale <-> RGB 변환
+----------------------------------------------------------------------------------------
+01 // RGB에서 그레이스케일로 변환
+02 Grayscale = 0.299 * R + 0.587 * G + 0.114 * B
+03
+04 // 그레이스케일에서 RGB로 변환
+05 R = Grayscale
+06 G = Grayscale
+07 B = Grayscale
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.6 YUV <-> RGB 변환 로직
+----------------------------------------------------------------------------------------
+01 // RGB에서 YCbCr로 변환(ITU-R BT.601 변환 식 적용)
+02 Y = 16 + (65.481 * R + 128.553 * G + 24.966 * B) / 255
+03 Cb = 128 + (-37.797 * R - 74.203 * G + 112.0 * B) / 255
+04 Cr = 128 + (112.0 - 93.786 * G - 18.214 * B) / 255
+05
+06 // YUV(NV21)에서 RGB로 변환
+07 R= min(255, Y + 1.370705 * (Cr - 128))
+08 G = min(255, Y - (0.698001 * (Cr - 128)) - (0.337633 * (Cb - 128)))
+09 B = min(255, Y + (1.732446 * (Cb - 128)))
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.7 Sample Cyclic Redundancy (C 언어)
+----------------------------------------------------------------------------------------
+01 /* 8비트 요소로 구성한 CRC 테이블 */
+02 unsigned long crc_table[256];
+03
+04 /* CRC 테이블 초기화 여부 */
+05 int crc_table_computed = 0;
+06
+07 /* 빠른 CRC를 위한 테이블 구축 */
+08 void make_crc_table(void)
+09 {
+10     unsigned long c;
+11     int n, k;
+12 
+13     for (n = 0; n < 256; n++) {
+14         c = (unsigned long) n;
+15         for (k = 0; k < 8; k++) {
+16             if (c & 1)
+17                 c = 0xedb88320L ^ (c >> 1);
+18             else
+19                 c = c >> 1;
+20         }
+21         crc_table[n] = c;
+22     }
+23     crc_table_computed = 1;
+24 }
+25 
+26 // CRC값 계산.첫 번째 인자 crc의 필드는 모두 1로 초기화되어야 함
+27 unsigned long update_crc(unsigned long crc, unsigned char *buf, int len)
+28 {
+29     unsigned long c= crc;
+30     int n;
+31 
+32     if (!crc_table_computed)
+33     make_crc_table();
+34     for (n = 0; n < len; n++) {
+35         c = crc_table[(c ^ buf[n]) & 0xff] ^ (c >> 8);
+36     }
+37     return c;
+38 }
+39 
+40 /* buf[0 ~ len-1]에 대한 CRC값 반환. 실제 Chunk Data를 buf로 전달
+41  * crc()의 최종 반환 값은 1의 보수 */
+42 unsigned long crc(unsigned char *buf, int len)
+43 {
+44     return update_crc(0xffffffffL, buf, len) ^ 0xffffffffL;
+45 }
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.8 IHDR 데이터 구성 예
+----------------------------------------------------------------------------------------
+01 Length: 13,
+02 Chunk type: IHDR,       #16진수 값은 73 72 68 82
+03 Chunk data: {
+04     Width: 800,
+05     Height: 600,
+06     Bit depth: 8,
+07     Color type: 6,
+08     Compression method: 0,
+09     Filter method: 0,
+10     Interlace method: 0
+11 },
+12 CRC
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.9 Paeth Predictor 의사코드
+----------------------------------------------------------------------------------------
+01 p = a + b - c
+02 pa = abs(p - a)
+03 pb = abs(p - b)
+04 pc = abs(p - c)
+05 if pa <= pb and pa <= pc then Pr = a
+06 else if pb <= pc then Pr = b
+07 else Pr = c
+08 return Pr
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.10 최근접 이웃 보간 크기 변환
+----------------------------------------------------------------------------------------
+01 /*
+02  * 최근접 이웃 보간을 적용한 이미지 크기 변환
+03  * @p src: NativeBuffer
+04  * @p dst: NativeBuffer
+05 */
+06 ImageRasterizer.nearestNeighborScale(src, dst):
+07 
+08     // 가로, 세로 크기 비율
+09     xScale = src.width / dst.width
+10     yScale = src.height / dst.height
+11
+12     // 버퍼 메모리 접근
+13     RGBA32 srcBitmap[] = src.map()
+14     RGBA32 destBitmap[] = dst.map()
+15 
+16     /* 최근접 이웃 보간 수행
+17      * 크기 변경을 수행한 이미지의 화소 위치로부터 원본 이미지의 화소 위치 검색 */
+18     for y : dst.height
+19         dy = yScale * y
+20         for x : dst.width
+21             dx = xScale * x
+22             dstBitmap[y * dst.stride + x] = srcBitmap[dy * src.stride + dx]
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.11 이중 선형 보간 크기 변환
+----------------------------------------------------------------------------------------
+01 /*
+02  * 이중 선형 보간을 적용한 이미지 크기 변환
+03  * @p src: NativeBuffer
+04  * @p dst: NativeBuffer
+05 */
+06 ImageRasterizer.bilinearScale(src, dst):
+07
+08     // 가로, 세로 크기 비율
+09     xScale = src.width / dst.width
+10     yScale = src.height / dst.height
+11 
+12     // 버퍼 메모리 접근
+13     RGBA32 srcBitmap[] = src.map()
+14     RGBA32 dstBitmap[] = dst.map()
+15 
+16     /* 이중 선형 보간 수행
+17      * 크기 변경을 수행한 이미지의 화소 위치로부터 원본 이미지 화소를
+18      * 찾은 후 인접한 세 개의 화소와 색상 혼합 */
+19     for y : (dst.height - 1)
+20         dy = yScale * y
+21         for x : (dst.width - 1)
+22             dx = xScale * x
+23             sx1 = floor(dx) // 소수점 버림
+24             sy1 = floor(dy) // 소수점 버림
+25             sx2 = sx1 + 1
+26             sy2 = sy1 + 1
+27 
+28             // 소수점 이하 값
+29             xFraction = dx - sx1
+30             yFraction = dy - sy1
+31 
+32             s1 = srcBitmap[sy1 * src.stride + sx1]
+33             s2 = srcBitmap[sy1 * src.stride + sx2]
+34             s3 = srcBitmap[sy2 * src.stride + sx1]
+35             s4 = srcBitmap[sy2 * src.stride + sx2]
+36 
+37             // T1 = (xS2 - xD1) / (xS2 - xS1)
+38             // D1 = T1 * S1 + (1 - T1) * S2
+39             t1 = (sx2 - dx) / (sx2 - sx1)
+40             d1 = lerp(s1, s2, t)
+41 
+42             // T2 = (xS2 - xD1) / (xS2 - xS1)
+43             // D2 = T2 * S3 + (1 - T2) * S4
+44             d2 = lerp(s3, s4, t)
+45 
+46             // T = (yD2 - yD) / (yD2 - yD1)
+47             // D = T * D1 + (1 - T) * D2
+48             t = (sy2 - dy) / (sy2 - sy1)
+49             d = lerp(d1, d2, t)
+50 
+51             destBitmap[y * dst.stride + x] = d
+52
+53 // p1과 p2 화소를 t 가중치로 합성
+54 lerp(p1, p2, t):
+55     R = t * ((p1 >> 24) & 0xff) + (1 - t) * ((p2 >> 24) & 0xff)
+56     G = t * ((p1 >> 16) & 0xff) + (1 - t) * ((p2 >> 16) & 0xff)
+57     B = t * ((p1 >> 8) & 0xff) + (1 - t) * ((p2 >> 8) & 0xff)
+58     A = t * (p1 & 0xff) + (1 - t) * (p2 & 0xff)
+59 
+60     return (R << 24) | (G << 16) | (B << 8) | A
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.12 평균값 필터 샘플링을 적용한 크기 변환
+----------------------------------------------------------------------------------------
+01 /*
+02  * 평균값 필터 샘플링을 적용한 이미지 크기 변환
+03  * @p src: NativeBuffer
+04  * @p dst: NativeBuffer
+05 */
+06 ImageRasterizer.customScale(src, dst):
+07 
+08     // 가로, 세로 크기 비율
+09     xScale = src.width / dst.width
+10     yScale = src.height / dst.height
+11
+12     // 샘플링할 화소 개수
+13     ySamples = round(yScale)
+14     xSamples = round(xScale)
+15 
+16     // 버퍼 메모리 접근
+17     RGBA32 srcBitmap[] = src.map()
+18     RGBA32 dstBitmap[] = dst.map()
+19
+20     for y : (dst.height - ySamples)
+21         dy = yScale * y
+22         for x : (dst.width - xSamples)
+23             dx = xScale * x
+24             d = sampling(srcBitmap, src.width, src.height, dx, dy, xSamples, ySamples)
+25             dstBitmap[y * dst.stride + x] = d
+26
+27 sampling(srcBitmap, stride, dx, dy, xSamples, ySamples):
+28
+29     // 최종 색상 (R, G, B, A)
+30     color[] = {0, 0, 0, 0}
+31
+32     // 샘플링 범위 계산
+33     // 이미지 데이터 영역을 벗어나지 않도록 범위 조절
+34     minY = dy - ySamples
+35     if minY < 0
+36         minY = 0
+37
+38     maxY = dy + ySamples
+39     if maxY > height
+40     maxY = height
+41
+42     minX = dx - xSamples
+43     if minX < 0
+44     minX = 0
+45
+46     maxX = dx + xSamples
+47     if maxX > width
+48         maxX = width
+49
+50     // 샘플링 범주의 화소값 합산
+51     for y : [minY ~ maxY]
+52         for x : [minX ~ maxX]
+53             src = srcBitmap[(minY + y) * stride + (minX + x)]
+54             c[0] += (src >> 24) & 0xff
+55             c[1] += (src >> 16) & 0xff
+56             c[2] += (src >> 8) & 0xff
+57             c[4] += src & 0xff
+58
+59     // 화소값 평균 도출
+60     n = (maxY - minY) * (maxX - minX)
+61
+62     c[0] /= n
+63     c[1] /= n
+64     c[2] /= n
+65     c[3] /= n
+66
+67     return (c[0] << 24) | (c[1] << 16) | (c[2] << 8) | c[3]
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.13 UI 컴포넌트 회전 구현 예
+----------------------------------------------------------------------------------------
+01 // 버튼을 z축 중심으로 45도 회전. rotate() 매개변수는 x, y, z축 회전 각도
+02 button.rotate(0, 0, 45)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.14 원근법 설정 예
+----------------------------------------------------------------------------------------
+01 /* 원근법 정보 설정. 초점의 위치와 소실점 거리 지정 */
+02 obj.perspect = {focalX, focalY, distance}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.15 텍스처 매핑 사용 예시
+----------------------------------------------------------------------------------------
+01 /* UIQuad는 사각형을 출력하기 위한 인터페이스
+02    이때 정정 입력 순서는 시계 방향(Clock-Wise) */
+03 quad = UIQuad():
+04     // 네 정점 좌표 {x, y, z} 지정. 인덱스는 정점 순서를 가리킴
+05     .coord[0] = {200, 0, 0}
+06     .coord[1] = {400, 50, 0}
+07     .coord[2] = {400, 100, 0}
+08     .coord[3] = {200, 150, 0}
+09 
+10     // 텍스처 좌표 지정
+11     .uv[0] = {0, 0} // 이미지 좌측 상단
+12     .uv[1] = {1, 0} // 이미지 우측 상단
+13     .uv[2] = {1, 1} // 이미지 우측 하단
+14     .uv[3] = {0, 1} // 이미지 좌측 하단
+15 
+16     // 매핑할 텍스처 리소스
+17     .path = "texture.png"
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.16 텍스처 매핑 대상으로 UI 객체 지정
+----------------------------------------------------------------------------------------
+01 // 코드 4.15와 동일하게 UIQuad의 정점과 텍스처 좌표 설정
+02 quad = UIQuad()
+03 ...
+04 // 매핑할 텍스처로서 버튼 컴포넌트 생성
+05 button = UIButton()
+06 ...
+07 // 매핑 대상 지정
+08 quad.source = button
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.17 Span에 매핑할 텍스처 화소 결정부
+----------------------------------------------------------------------------------------
+01 /* Span[8]의 px[5](여섯 번째 화소)를 구해 보자.
+02    먼저 px[5]에 대응하는 vTex의 화소 위치를 찾기 위해 비율을 계산 */
+03 pxPos = 6 / (spans[8].coord[1] - spans[8].coord[0])
+04
+05 /* Span[8]에 매핑할 텍스처 공간의 벡터를 구한다. */
+06 vTex = spans[8].uv[1] - spans[8].uv[0]
+07 
+08 /* vTex의 방향 벡터를 구한다. */
+09 vTexNorm = Math.normalize(vTex)
+10 
+11 /* 마지막으로 vTex에서 pxPos에 위치하는 텍스처 좌표를 찾는다. */
+12 texCoord = vTexNorm * pxPos
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.18 알파 블렌딩 함수
+----------------------------------------------------------------------------------------
+01 /*
+02  * 알파 블렌딩 구현
+03  * 블렌딩 식: (DstRGB * (1 - SrcA)) + (SrcRGB * SrcA)
+04  * @p src: RGBA32
+05  * @p dst: RGBA32
+06 */
+07 comp(src, dst):
+08     RGBA32 out
+09     out.r = dst.r * ((255 - src.a) / 255) + (src.r * (src.a / 255))
+10     out.g = dst.g * ((255 - src.a) / 255) + (src.g * (src.a / 255))
+11     out.b = dst.b * ((255 - src.a) / 255) + (src.b * (src.a / 255))
+12     out.a = (255 - src.a) + src.a
+13 
+14     return out
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.19 블렌딩을 적용한 도형 드로잉
+----------------------------------------------------------------------------------------
+01 /*
+02  * 사각형 그리는 작업 수행
+03  * @p buffer: NativeBuffer
+04  * @p rect: Geometry
+05  * @p clipper: Geometry
+06  * @p fill: UIFill
+07  * @p comp: UICompositor
+08 */
+09 VectorEngine.drawRect(buffer, rect, clipper, fill, comp, ...):
+10     ...
+11     // 클리핑을 수행하여 드로잉을 수행할 사각 영역을 구함
+12     clipped = clipRects(rect, Geometry(0, 0, buffer.width, buffer.height))
+13 
+14     // src는 사각형 색상, dst는 사각형이 그려질 대상
+15     src = fill.color
+16     for y : [clipped.y ~ (clipped.y + clipped.h)]
+17         for x : [clipped.x ~ (clipped.x + clipped.w)]
+18             dst = bitmap[y * stride + x]
+19             // comp()는 src와 dst에 알파 블렌딩을 수행한 결과를 반환
+20             bitmap[y * stride + x] = comp(src, dst)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.20 블렌딩 옵션 지정
+----------------------------------------------------------------------------------------
+01 // 대상 객체
+02 dst = UICircle():
+03     .position = {200, 100}
+04     .radius = 100
+05     .fill = UIFillSolid(233, 30, 99, 255)
+06 
+07 // 소스 객체
+08 src = UIRect():
+09     .geometry = {100, 200, 200, 200}
+10     .fill = UIFillSolid(33, 150, 243, 127)
+11     .compMethod = UIComposition.AlphaBlend    // 블렌딩 옵션 지정
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.21 다형성을 이용한 블렌딩 확장
+----------------------------------------------------------------------------------------
+01 /* Compositor 인터페이스. 입력과 출력을 정의 */
+02 interface UICompositor:
+03     /* @p src: RGBA32
+04        @p dst: RGBA32 */
+05     Pixel32 comp(src, dst)
+06 
+07 /* Compositor 인터페이스를 기반으로 AddBlend 구현 */
+08 UIAddBlend implements UICompositor:
+09     override comp(src, dst):
+10         ...
+11         return out
+12
+13 /* Compositor 인터페이스를 기반으로 AlphaBlend 구현 */
+14 UIAlphaBlend implements UICompositor:
+15     override comp(src, dst):
+16         ...
+17         return out
+18 
+19 /* 그 외 블렌딩 옵션 구현 */
+20 ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.22 블렌딩 옵션 지정
+----------------------------------------------------------------------------------------
+01 /* 특정 UI 객체에 AlphaBlend 지정 */
+02 src = UIRect():
+03     /* compMethod()에 익명(Anonymous)의 UIAlphaBlend 객체를 전달 */
+04     .compMethod = UIAlphaBlend
+05     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.23 블렌딩 함수 호출 과정
+----------------------------------------------------------------------------------------
+01 /* UIObject는 블렌딩 옵션으로 UICompositor 객체를 전달받음
+02    @p comp: UICompositor */
+03 UIObject.compMethod(comp):
+04     .comp = comp
+05     ...
+06 
+07 /* 이후 객체가 render()를 수행할 시 앞서 지정한 comp를 래스터라이저로 전달한다.
+08    이 comp는 래스터 단계에서 호출된다. 이후 수행할 코드는 4.19와 동일. */
+09 UIRect.render(context, ...):
+10     ...
+11     context.engine.drawRect(..., .comp, ...)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.24 사용자 정의 필터 구현
+----------------------------------------------------------------------------------------
+01 /* UserCustomFilter는 UIFilter 인터페이스를 구현 */
+02 UserCustomFilter implements UIFilter:
+03     /* 필터 수행 함수
+04        @p in: RGBA32
+05        @p coord: Point */
+06     override func(in, coord, ...):
+07         RGBA32 out
+08         /* 필터 동작을 수행하는 로직 작성. in으로 받은 화소를
+09            변조하여 out에 기록. 구현 사례는 6.2.4절에서 다룬다. */
+10         ...
+11         return out
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.25 필터 기능 적용
+----------------------------------------------------------------------------------------
+01 content = UIImage():
+02     // UI 객체에 사용자 정의 필터를 추가하고 내장 필터도 적용
+03     .filters += UserCustomFilter
+04     .filters += UIBlurFilter
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.26 필터 수행 엔진 구현부
+----------------------------------------------------------------------------------------
+01 /*
+02  * UIImage 렌더링 수행
+03  * UIImage는 이미지를 출력하는 UIObject의 파생 타입
+04  * @p context: RenderContext
+05 */
+06 UIImage.render(context, ...):
+07     ...
+08     // 필터를 적용할 장면 이미지를 보관할 버퍼
+09     tmp = NativeBuffer(...)
+10 
+11     // 출력 장면을 대상 버퍼(buffer)가 아닌 임시 버퍼(tmp)에 그림
+12     ImageRasterizer.draw(tmp, ...)
+13 
+14     /* 객체에 지정된 필터 목록(.filters())을 참조하여 필터 프로세싱 수행.
+15        UIFilterProcessor.proc()은 filters()가 보유한 필터 목록을 차례로
+16        수행하는 역할을 한다고 가정하고 결과적으로 장면 tmp로부터 필터
+17        수행 결과물을 출력 버퍼(context.target)에 기록 */
+18     UIFilterProcessor.proc(tmp, .filters, ..., context.target)
+19     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.27 프로그램에서 이미지 캐시 크기 지정
+----------------------------------------------------------------------------------------
+01 // 해당 프로세스에서 사용할 이미지 캐시 최대 크기 지정(예시: 50,000Kbytes)
+02 UICanvas.ImageCacheSize = 50000
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 4.28 LRU 기반 이미지 캐싱 메커니즘
+----------------------------------------------------------------------------------------
+01 /* UIImage.render() 전 수행되는 이미지 준비 단계 */
+02 UIImage.prepare(...)
+03     ...
+04     // 캐시 키 생성. 이미지 경로와 이미지 가로, 세로 크기를 조합
+05     key = UniqueKey(.path + .width + "x" + .height)
+06 
+07     // 기존 캐싱 데이터인지 확인
+08     dstBuffer = ImageCacheMgr.get(key)
+09
+10     // 캐싱된 이미지가 아닐 경우 새로 만들어서 추가
+11     if dstBuffer.invalid()
+12         dstBuffer = NativeBuffer(.width, .height, RGBA32, IPC_PRIVATE, IO_WRITE + IO_READ, ...)
+13 
+14         // srcBuffer로부터 dstBuffer에 이미지 스케일링 수행
+15         ImageRasterizer.bilinearScale(.srcBuffer, dstBuffer)
+16 
+17         // 재사용을 위해 dstBuffer 캐싱
+18         ImageCacheMgr.add(key, dstBuffer)
+19 
+20     // 만약 dstBuffer가 존재한다면 이를 재활용
+21     ...
+22
+23 /*
+24  * 새 캐시 데이터 추가
+25  * @p key: var
+26  * @p data: NativeBuffer
+27 */
+28 ImageCacheMgr.add(key, data)
+29     // 캐시 크기 초과
+30     return false if data.size > .maxCacheSize
+31     // 누적 캐시 크기 갱신
+32     .cacheSize += data.size
+33 
+34     // 초과한 캐시 크기만큼 캐시 메모리 확보
+35     whlie (.cacheSize - .maxCacheSize) > 0
+36         /* 캐시 목록에서 첫 번째 (가장 오래된) 이미지 삭제
+37            Pair는 키와 데이터 쌍을 담은 자료구조 */
+38         Pair it = .cacheList.get(0)
+39         NativeBuffer tmp = it.data
+40          .cacheSize -= tmp.size
+41         .cacheList.remove(0)
+42
+43     // 캐시 공간이 확보되었으므로 cacheList에 이미지 추가
+44     Pair it(key, data);
+45     .cacheList.append(it);
+46
+47 /*
+48  * 캐시 이미지 반환
+49  * @p key: Var
+50 */
+51 ImageCacheMgr.get(key)
+52     Pair it
+53
+54     // 캐시 목록에서 주어진 키와 일치하는 이미지 탐색
+55     for it : .cacheList
+56         /* 이미지를 찾은 경우 이미지를 리스트 최상단으로 옮긴 후 캐시 데이터 반환 */
+57         if it.key == key
+58             .cacheList.remove(it)
+59             .cacheList.append(it)
+60             return it.data
+61     // 존재하지 않는 이미지
+62     return invalid
+----------------------------------------------------------------------------------------

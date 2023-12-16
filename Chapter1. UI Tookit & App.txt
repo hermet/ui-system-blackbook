@@ -1,0 +1,1043 @@
+# UI System Blackbook Code by 박춘언 (hermetpark@gmail.com)
+
+
+@코드 1.1 이미지와 텍스트를 이용한 앱 UI 구현
+----------------------------------------------------------------------------------------
+01 // 검색 상자
+02 searchBox = UIImage():                    // 이미지 생성
+03    .path = "./res/SearchBox.png"          // 이미지 리소스
+04    .geometry = {140, 400, 620, 55}        // 이미지 위치 및 크기
+05
+06 // 검색 상자 검색 아이콘
+07 searchIcon = UIImage():                   // 이미지 생성
+08     .path = "./res/SearchIcon.png"        // 이미지 리소스
+09     .geometry = {160, 410, 35, 35}        // 이미지 위치 및 크기
+10
+11 // 검색 상자 가이드 텍스트
+12 guideText = UIText(): // 텍스트 생성
+13     .text = "Search Google or type a URL" // 텍스트 설정
+14     .color = "lightgray"                  // 텍스트 색상
+15     .geometry = {200, 410, 235, 35}       // 텍스트 위치 및 크기
+16
+17 // 검색 상자 음성 아이콘
+18 voiceIcon = UIImage():                    // 이미지 생성
+19     .path = "./res/VoiceIcon.png"         // 이미지 리소스
+20     .geometry = {700, 410, 35, 35}        // 이미지 위치 및 크기
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.2 도형을 이용한 UI 화면 구성
+----------------------------------------------------------------------------------------
+01 // 검색 상자
+02 searchBox = UIRoundRect():            // 모서리를 둥글린 사각형 생성
+03     .geometry = {140, 400, 620, 55}   // 위치 및 크기
+04     .cornerRadius = 27.5              // 모서리 둥근 정도
+05     .fill = UIColor.White             // 색상 (흰색)
+06     .stroke = UIStroke():             // 검색 상자 테두리
+07         .width = 1                    // 테두리 두께
+08         .color = UIColor.Gray         // 테두리 색상 (회색)
+09
+10 // 이하 코드 1.1과 동일
+11 ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.3 UI 컴포넌트를 이용한 앱 UI 구현
+----------------------------------------------------------------------------------------
+01 // 검색 상자 UI 컴포넌트(코드 1.1 대체 버전)
+02 searchBox = UISearchBox(): // 검색 상자 생성
+03     .text = "Search Google or type URL"  // 가이드 텍스트 설정
+04     .searchIcon = "./res/SearchIcon.png" // 검색 아이콘 설정
+05     .voiceIcon = "./res/VoiceIcon.png"   // 음성 아이콘 설정
+06     .geometry = {140, 400, 620, 55}      // 검색 상자 위치 및 크기
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.4 버튼 생성 및 클릭 이벤트 등록
+----------------------------------------------------------------------------------------
+01 myBtn = UIButton():                 // 버튼 생성
+02     .text = "My Button"             // 버튼 텍스트
+03     .geometry = {110, 80, 200, 130} // 버튼 위치 및 크기
+04
+05 /*
+06  * 버튼 클릭 이벤트를 람다 함수로 구현
+07  * Clicked 이벤트 발생 시 func() 수행
+08  * obj 인자로 myBtn 인스턴스 전달
+09 */
+10 func(UIButton obj, ...):
+11     obj.text = "Button Pressed!"    // 버튼 레이블 변경
+12
+13 myBtn.EventClicked += func          // 클릭 이벤트 수행 함수 func() 등록
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.5 버튼 복수 이벤트 등록
+----------------------------------------------------------------------------------------
+01 // 눌림 이벤트 발생 시 pressedCb() 수행
+02 pressedCb(UIButton obj, ...):
+03     ...
+04
+05 // 눌림 해제 이벤트 발생 시 unpressedCb() 수행
+06 unpressedCb(UIButton obj, ...):
+07     ...
+08
+09 // 롱프레스 이벤트 발생 시 longpressedCb() 수행
+10 longpressedCb(UIButton obj, ...):
+11     ...
+12
+13 myBtn.EventPressed += pressedCb
+14 myBtn.EventUnpressed += unpressedCb
+15 myBtn.EventLongpressed += longpressedCb
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.6 Doxygen 형식에 맞춰 작성한 버튼 개발 가이드 문서 예시
+----------------------------------------------------------------------------------------
+01 /**
+02  * @defgroup UIButton Button
+03  * @ingroup UIComponent
+04  *
+05  * This is a push-button. Press it and run some function. It can contain
+06  * a simple text and icon object and it also has an autorepeat feature.
+07  *
+08  * This widget inherits from the @ref Layout one, so that all the
+09  * functions acting on it also work for button objects.
+10  * ...
+11  * This control emits the following signals,
+12  * besides the ones sent from Layout.
+13  * @li EventClicked: the user clicked the button (press/release).
+14  * @li EventPressed: button was pressed.
+15  * @li EventUnpressed: button was released after being pressed.
+16  * @li EventLongpressed: the user pressed the button without releasing it.
+17  * ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.7 일반적인 UI 컴포넌트 인터페이스
+----------------------------------------------------------------------------------------
+01 myRadio = UIRadio():    // 라디오 버튼 컴포넌트
+02
+03 // Clicked 이벤트 발생 시 본 동작 수행
+04 func(UIRadio obj, ...):
+05     obj.text = "Radio selected!"
+06
+07 // 버튼을 학습한 경우, Clicked 이벤트 동작을 쉽게 유추 가능
+08 .EventClicked += func
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.8 복수 이벤트 등록
+----------------------------------------------------------------------------------------
+01 // EventClicked 이벤트 발생 시 func1() 수행
+02 func1(UIRadio obj, ...):
+03     // 메시지 출력...
+04
+05 // EventClicked 이벤트 발생 시 func2() 수행
+06 func2(UIRadio obj, ...):
+07     // 이미지 출력...
+08
+09 myRadio.EventClicked += func1
+10 myRadio.EventClicked += func2
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.9 이벤트 수행 우선 순위 지정
+----------------------------------------------------------------------------------------
+01 myRadio.EventClicked += {func1, priority = 2} // 우선순위: 2
+02
+03 // 위 이벤트보다 우선순위가 높기 때문에 func2가 우선 호출
+04 myRadio.EventClicked += {func2, priority = 1} // 우선순위: 1
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.10 등록한 이벤트 호출 제거
+----------------------------------------------------------------------------------------
+01 func(UIButton obj, ...):
+02 ...
+03
+04 // 이벤트 호출을 해지하기 위해 반환한 핸들 보유
+05 myEvent = (myBtn.EventClicked += func)
+06 ...
+07 // 등록한 이벤트 호출 해제
+08 myBtn.EventClicked -= myEvent
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.11 버튼 비활성화
+----------------------------------------------------------------------------------------
+01 /* 버튼 비활성화. 다시 활성화하려면 false 입력 */
+02 myBtn.disable = true
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.12 선형 레이아웃 사용 예
+----------------------------------------------------------------------------------------
+01 // 수직 선형 레이아웃 생성
+02 myLayout = UIVerticalLinearLayout():
+03     // 상대 좌표계 활용. 생성한 레이아웃을 윈도 공간 전체 영역에 고정
+04     .relative = {0, 0, 1, 1}
+05     // 레이아웃을 윈도 영역에 종속
+06     .relativeTo = .myWnd
+07     // 레이아웃에 버튼 1, 2, 3 추가
+08     .contain():
+09         myBtn1 = UIButton():
+10             .text = "Button 1"
+11         myBtn2 = UIButton():
+12             .text = "Button 2"
+13         myBtn3 = UIButton():
+14             .text = "Button 3"
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.13 가중치 지정 예
+----------------------------------------------------------------------------------------
+01 // 넓이 = 1.0, 높이 = 0.5 가중치 설정 예
+02 myBtn.weight = {1.0, 0.5}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.14 정렬 지정 예
+----------------------------------------------------------------------------------------
+01 myBtn.align = {UIAlignment.Left, UIAlignment.Top}     // 왼쪽, 상단 (0, 0)
+02 myBtn.align = {UIAlignment.Right, UIAlignment.Bottom} // 오른쪽, 하단 (1, 1)
+03 /* 가운데 정렬 (0.5, 0.5) */
+04 myBtn.align = {UIAlignment.Center, UIAlignment.Center}
+05 /* 정렬 대신 컴포넌트 크기를 확장하여 영역을 가득 채움 */
+06 myBtn.align = {UIAlignment.Fill, UIAlignment.Fill}
+07 myBtn.align = {0.25, 0.25}                            // 특정 위치 지정
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.15 가중치와 정렬을 고려한 레이아웃 계산
+----------------------------------------------------------------------------------------
+01 /* 콘텐츠(UI 컴포넌트)를 수직 배치하는 레이아웃 기능 수행 */
+02 UIVerticalLinearLayout extends UILinearLayout:
+03
+04     // 다음 속성은 상위 클래스에서 정의될 수 있다.
+05     UIObject contents[] // 컨테이너에 추가된 콘텐츠 목록
+06
+07     /* 컨테이너가 보유한 콘텐츠의 위치 및 크기 결정. 그 외 로직은 생략 */
+08     update():
+09         ...
+10         Size contentSize[contents.count]    // 컨테이너에 추가된 콘텐츠들의 크기
+11         finished = false // 계산 완료 여부
+12
+13         // 레이아웃 계산 시작
+14         while not finished
+15             newSize = {0, 0}                // 컨테이너 새 크기
+16             idx = 0
+17             finished = true
+18
+19             for content : .contents
+20                 // 콘텐츠 크기 갱신
+21                 content.update()
+22
+23                 // 가중치는 0 ~ 1 범위 허용
+24                 weight = content.weight
+25
+26                 // 가중치 기반으로 크기 결정
+27                 // 각 콘텐츠에 할당된 공간은 동일하다고 가정
+28                 contentSize[idx].w = .geometry.w * weight.w
+29                 contentSize[idx].h = (.geometry.h / .contents.count) * weight.h
+30
+31                 // 콘텐츠 최소 크기 보장. 최대 크기는 생략
+32                 if content.minSize.w > contentSize[idx].w
+33                     contentSize[idx].w = content.minSize.w
+34                 if content.minSize.h > contentSize[idx].h
+35                     contentSize[idx].h = content.minSize.h
+36
+37                 // Layout 크기 결정
+38                 if newSize.w < contentSize[idx].w
+39                     newSize.w = contentSize[idx].w
+40                 newSize.h += contentSize[idx].h
+41
+42                 ++idx
+43
+44             // 계산한 레이아웃 크기가 이전보다 크면 최신 기준 재 갱신
+45             if newSize.w > .geometry.w
+46                 .geometry.w = newSize.w
+47                 finished = false
+48
+49             if newSize.h > .geometry.h
+50                 .geometry.h = newSize.h
+51                 finished = false
+52
+53             /* 실제 컨테이너 크기 대비 콘텐츠가 요구하는 크기 차 계산
+54                만약 컨테이너 영역에 여분이 존재하면 남은 영역 재분배 */
+55             Size diff = {.geometry.w - newSize.w, .geometry.h - newSize.h}
+56             if (diff.x not 0) or (diff.y not 0)
+57                 finished = false
+58
+59         idx = 0
+60
+61         // 콘텐츠 시작 위치
+62         baseY = .geometry.y
+63
+64         for content : .contents
+65             // 최종 너비 결정
+66             if content.align.x == UIAlignment.Fill
+67                 content.geometry.w = .geometry.w
+68             else
+69                 content.geometry.w = content.weight.w * newSize.w
+70
+71             // 정렬이 Fill인 경우 계산한 크기를 콘텐츠의 크기로 지정
+72             if content.align.x == UIAlignment.Fill
+73                 content.geometry.w = .geometry.w
+74                 content.geometry.x = .geometry.x
+75             // 콘텐츠 가로 위치 결정
+76             else
+77                 content.geometry.w = contentSize[idx].w * content.weight.w
+78                 x = (contentSize[idx].w - content.geometry.w) * (var) content.align.h
+79                 if x < 0
+80                     x = 0
+81                 content.geometry.x = (.geometry.x + x)
+82
+83             // 정렬이 Fill인 경우 계산한 크기를 콘텐츠의 크기로 지정
+84             if content.align.y == UIAlignment.Fill
+85                 content.geometry.h = contentSize[idx].h
+86                 content.geometry.y = baseY
+87             // 콘텐츠 세로 위치를 결정
+88             else
+89                 content.geometry.h = contentSize[idx].h * content.weight.h
+90                 y = (contentSize[idx].h - content.geometry.h) * (var) content.align.h
+91                 if y < 0
+92                     y = 0
+93                 content.geometry.y = (baseY + y)
+94 
+95             // 다음 콘텐츠 시작 위치
+96             baseY += contentSize[idx].h
+97
+98            ++idx
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.16 절대 좌표계를 이용한 화면 배치
+----------------------------------------------------------------------------------------
+01 myBtn = UIButton():                   // 버튼 생성
+02     .geometry = {50, 50, 100, 100}    // 버튼 위치 및 크기(단위는 화소)
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.17 정규 좌표계를 이용한 화면 배치
+----------------------------------------------------------------------------------------
+01 /* 왼쪽 상단 꼭짓점 위치: (50/200, 50/200)
+02    오른쪽 하단 꼭짓점 위치: (150/200, 150/200) */
+03 myBtn.relative = {0.25, 0.25, 0.75, 0.75}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.18 정규 좌푯값으로부터 절대 좌푯값 계산
+----------------------------------------------------------------------------------------
+01 /* UI 컴포넌트의 기저 클래스에 해당하며 기본 동작 및 속성을 구현 
+02    자세한 사항은 2.3.2절에서 설명한다. */
+03 UIObject:
+04     Geometry geometry = {0, 0, 0, 0}   // 절대 좌푯값 기하 정보
+05     Geometry relative = {0, 0, 0, 0}   // 정규 좌푯값 기하 정보
+06     bool useRelative = false           // true인 경우 정규 좌푯값 이용
+07     ...
+08
+09     /*
+10      * 객체의 기하 정보를 절대 좌푯값으로 지정
+11      * @p x: var
+12      * @p y: var
+13      * @p w: var
+14      * @p h: var
+15     */
+16     geometry(x, y, w, h):
+17         .geometry = {x, y, w, h}
+18         .useRelative = false           // 절대 좌표계 이용
+19         ...
+20
+21     /*
+22      * 객체의 기하 정보를 정규 좌푯값으로 지정
+23      * @p x1: var
+24      * @p y1: var
+25      * @p x2: var
+26      * @p y2: var
+27     */
+28     relative(x1, y1, x2, y2):
+29         .relative = {x1, y1, x2, y2}   // 새로운 좌표 저장
+30         .useRelative = true            // 정규 좌푯값 이용
+31         ...
+32
+33     /* 객체 상태 갱신 */
+34     update(...):
+35         ...
+36         // 상대 좌표계를 이용 중인 경우 절대 좌푯값 계산
+37         if .useRelative
+38             .geometry.x = (.canvas.size.w - 1) * .relative.x1
+39             .geometry.y = (.canvas.size.h - 1) * .relative.y1
+40             .geometry.w = (.canvas.size.w - 1) * .relative.x2 - .geometry.x
+41             .geometry.h = (.canvas.size.h - 1) * .relative.y2 - .geometry.y
+42             ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.19 상대 좌표 구현 예
+----------------------------------------------------------------------------------------
+01 /* 이미지 생성. 좌표 공간은 앱 화면 공간(캔버스) 기준 */
+02 myImg = UIImage():
+03     .path = "./res/star.png"
+04     .relative = {0.0, 0.0, 0.25, 0.25}
+05 
+06 /* 이미지 생성. 좌표 공간은 myImg의 기하 영역 기준 */
+07 myImg2 = UIImage():
+08     .path = "./res/star.png"
+09     .relativeTo = myImg                // 상대 좌표 대상 지정
+10     .relative = {1.0, 0.0, 2.0, 1.0}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.20 상대 지정 인터페이스 세분화
+----------------------------------------------------------------------------------------
+01 myObj.relative1To = target1      // 왼쪽 상단 꼭짓점 상대 좌표 대상 지정
+02 myObj.relative1 = {1.0, 1.0}     // target1의 오른쪽 하단 꼭짓점을 가리킴
+03 myObj.relative2To = target2      // 오른쪽 하단 꼭짓점 상대 좌표 대상 지정
+04 myObj.relative2 = {0.0, 0.0}     // target2의 왼쪽 상단 꼭짓점을 가리킴
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.21 기기 독립적인 화소 지정(안드로이드)
+----------------------------------------------------------------------------------------
+01 LinearLayout layout = new LinearLayout(this);
+02 LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams)
+03 layout.getLayoutParams();
+04 layoutParams.height = dpToPx(context, 400);   // dp 단위에서 화소 단위로 변환
+05 layoutParams.width = dpToPx(context, 400);
+06 layout.setLayoutParams(layoutParams);
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.22 dp 단위에서 화소 단위로 변환하는 함수(안드로이드)
+----------------------------------------------------------------------------------------
+01 public static int dpToPx(Context context, int dp) {
+02     /* 안드로이드 시스템에서 정한 기준 dpi는 160이다.
+03        따라서 160dpi 환경에서는 density의 값으로 1을 반환한다. */
+04     float density = context.getResource().getDisplayMetrics().density;
+05     return Math.round((float) dp * density);
+06 }
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.23 App UI 스케일 팩터 적용
+----------------------------------------------------------------------------------------
+01 /* 앱 런칭 시점에 UIApp 클래스를 이용하여 해상도를 결정. 이후 UI 엔진은
+02    런타임에 현 기기의 해상도 정보를 얻고 스케일 팩터 값을 도출한다.
+03    UI 툴킷(에디터)이 잘 구비되어 있다면 본 설정을 앱 개발자가 직접 수행할
+04    필요가 없다. */
+05 UIApp.targetResolution = {1280, 720}
+06
+07 ...
+08
+09 /* UI 앱에서 구현한 기하 정보에 스케일 팩터를 적용한 예시.
+10    현재 앱에서 명시한 버튼의 기하 정보는 FHD 해상도 기준이므로
+11    다른 해상도의 기기에서는 스케일 팩터 값을 적용하여 크기를 재조정한다.
+12    _S() 매크로는 입력 값에 스케일 팩터 값을 곱한 값을 반환한다고 가정 */
+13 myBtn = UIButton():
+14     .text = "My Button"
+15     .geometry = {_S(50), _S(50), _S(100), _S(100)}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.24 시스템 UI 스케일 팩터 적용
+----------------------------------------------------------------------------------------
+01 // 시스템 UI에 기준 스케일을 지정
+02 systemUI = UITheme():
+03     // SystemUI_Theme은 시스템 UI를 구현한 정보를 보관
+04     .open("SystemUI_Theme")
+05     /* 이해를 돕기 위한 예시일 뿐이다. 실제 해상도 정보는 코드가 아닌
+06     SystemUI_Theme 데이터 내에 기록될 수 있다. */
+07     .targetResolution = {1440, 2560}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.25 텍스트 축약 기능 활성화
+----------------------------------------------------------------------------------------
+01 myBtn.textEllipsis = true
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.26 이미지 고정 영역 지정
+----------------------------------------------------------------------------------------
+01 myImg = UIImage():
+02     .path = "./res/button.png"
+03     .fixedRegion = {w1, w2, h1, h2}    // 고정 영역 지정(좌, 우, 상, 하)
+04     .geometry = {x, y, w, h}           // 고정 영역은 영향을 받지 않음
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.27 최소/최대 크기 지정
+----------------------------------------------------------------------------------------
+01 /* 객체(컴포넌트)의 최소, 최대 크기 지정.
+02    이는 기하 정보(geometry) 입력 값보다 우선순위가 높다. */
+03 obj.minSize = {100, 100}
+04 obj.maxSize = {1000, 1000}
+05 ...
+06 /* 아래 요청한 크기는 최소, 최대 크기를 벗어나므로 허용하지 않는다.
+07    이 경우 시스템은 실패를 반환하거나 입력한 크기를 최소, 최대 크기
+08    범위 내로 재조정한다. */
+09 obj.size = {50, 50}
+10 obj.size = {2000, 2000}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.28 버튼 UI 구성
+----------------------------------------------------------------------------------------
+01 /* 그림 1.35의 버튼 UI 구성
+02    w1 = 10, w2 = 25, w3 = 가변, w4 = 10
+03    h1 = 10, h2 = 10, h3 = 25, h4 = 가변
+04    코드가 다소 복잡하다면 그림을 그려가면서 이해해 보자. */
+05 composeButtonUI():
+06     // 버튼
+07     btn = UIButton()
+08
+09     // 배경 이미지
+10     bg = UIImage():
+11         .path = "./res/button.png"
+12         .fixedRegion = {w1, w4, h1, h2}    // 이미지 고정 영역
+13         .relativeTo = btn                  // 상대 좌표 대상 지정
+14
+15     // 아이콘
+16     icon = UIImage():
+17         .path = ...                 // 앱 개발자가 요청한 이미지 리소스 명시
+18         .padding = {w1, 0, 0, 0}    // 좌, 우, 상, 하 여백 설정(단위는 화소)
+19         .relativeTo = bg            // 상대 좌표 대상 지정. 아이콘은 bg 영역에 종속
+20         .align = {0, 0.5}           // 아이콘 기준은 bg 왼쪽 중심
+21         .minSize = {25, 25}         // 아이콘 최소 크기
+22         .maxSize = {25, 25}         // 아이콘 최대 크기
+23
+24     // 텍스트 (크기는 텍스트 출력 결과에 의존)
+25     text = UIText():
+26         .text = ...                     // 앱 개발자가 요청한 문자열 명시
+27         .padding = {w1 + w2, w4, 0, 0}  // 여백 설정
+28         .relativeTo = bg                // 상대 좌표 대상 지정. 텍스트는 bg 영역에 종속
+29         .align = {0, 0.5}               // 텍스트 기준은 bg 왼쪽 중심
+30         .fontName = "Sans"              // 폰트 이름
+31        .fontSize = 20                  // 폰트 크기
+32
+33     // 버튼 최소 크기
+34     w = w1 + icon.size.w + text.length + w4
+35     h = max(h1 + h2, text.size.h)
+36
+37     /* 시스템에서 지정한 최소 크기와 비교.
+38        여기서는 그 값을 fingerSize라고 명명 */
+39     if UIConfig.fingerSize > w
+40         w = UIConfig.fingerSize
+41     if UIConfig.fingerSize > h
+42         h = UIConfig.fingerSize
+43
+44     btn.minSize = {w, h}
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.29 디바이스 프로파일별 UI 구현
+----------------------------------------------------------------------------------------
+01 // 디바이스 타입에 따라 앱 요구 사항에 맞는 레이아웃 구성
+02 switch UIConfig.deviceProfile
+03     // 데스크톱 UI
+04     DeviceProfile.Desktop:
+05         ...
+06     // 모바일 UI
+07     DeviceProfile.Mobile:
+08        ...
+09     // TV UI
+10     DeviceProfile.TV:
+11         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+코드 1.30 해상도 프로파일별 UI 구현
+----------------------------------------------------------------------------------------
+01 // 현 해상도에 맞는 최적의 UI 구성
+02 switch window.screenProfile
+03    WVGA, WSVGA, HD:
+04         ...
+05     1080P, WUXGA:
+06         ...
+07     2K, UWHD, WQHD:
+08         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+코드 1.31 메인 루프 기본 로직
+----------------------------------------------------------------------------------------
+01 /* 엔진 가동 */
+02 UIEngine.run():
+03     // 메인 루프 가동 전 필요 작업 수행
+04     ...
+05
+06     // 이하 메인 루프 수행
+07     while running
+08         // 1. 이벤트 대기(6장 참고)
+09         waitForEvents()
+10         // 2. 이벤트 처리(6장 참고)
+11         processEvents()
+12         // 3. 화면 갱신(2장 참고)
+13         renderScreen()
+14
+15     // 메인 루프 종료 후 필요 작업 수행
+16     ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+코드 1.32 프레임워크 기반의 앱 구현
+----------------------------------------------------------------------------------------
+01 main():
+02     // 앱 인스턴스 생성 후 실행
+03     myApp = UIApp()
+04     myApp.run()
+05
+06 /* UI 프레임워크 기반의 인터페이스 제공. 클래스 및 메서드 이름은 임의로 정함 */
+07 UIApp:  
+08     /* UI 엔진뿐만 아니라 여러 라이브러리 및 서비스 초기화 */
+09     constructor():
+10         ...
+11         UIEngine.init()
+12         ...
+13     /* UIEngine.run() 전후로 여러 기능이 수행되지만 UI 엔진 가동이 핵심 */
+14     run():
+15         ...
+16         UIEngine.run()
+17         ...
+18     /* UI 엔진뿐만 아니라 여러 라이브러리 및 서비스 종료 */
+19     destructor():
+20         ...
+21         UIEngine.term()
+22         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.33 윈도 기반의 UI 구성
+----------------------------------------------------------------------------------------
+01 myWnd = UIWindow():                 // 윈도 생성
+02     .title = "My Window"            // 윈도 타이틀
+03     .size = {400, 400}              // 윈도 크기
+04     // 윈도 내 필요한 UI 컴포넌트 추가
+05     .contain():
+06         view = UILinearLayout():    // 컨테이너 생성
+07             .align = {UIAlignment.Fill, UIAlignment.Fill}
+08             .weight = {1, 1}
+09             // 컨테이너 내 필요한 UI 컴포넌트 추가
+10             .contain():
+11                 ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.34 AppLifeCycle 인터페이스
+----------------------------------------------------------------------------------------
+01 /* AppLifeCycle은 앱 수명 주기 인터페이스 제공 */
+02 interface AppLifeCycle:
+03     /* 앱 구동에 필요한 사전 작업 수행 */
+04     create()
+05     /* 앱 종료 시 호출. 앱 관리자에 의해 강제 종료되는 경우 등 해당 */
+06     destroy()
+07     /* 앱이 백그라운드(Background)로 전환되는 경우 */
+08     deactivate()
+09     /* 앱이 포어그라운드(Foreground)로 전환되는 경우 */
+10     activate()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.35 UIApp의 수명 주기 구현
+----------------------------------------------------------------------------------------
+01 /* UIApp에서 수명 주기 기본 동작 구현 */
+02 UIApp implements AppLifeCycle:
+03     UIWindow myWnd // 윈도 객체를 보관할 인스턴스
+04
+05     override create():
+06         // 윈도 생성 및 기본 설정 작업 수행
+07         .myWnd = UIWindow():
+08         ...
+09 
+10     override destroy():
+11         .wnd = invalid // 윈도 삭제
+12
+13     override deactivate():
+14         .wnd.visible = false                            // 윈도 비활성화
+15         AnimationCore.freeze = true                     // 동작 중인 모든 애니메이션 정지
+16         UIEngine.throttle = UIEngineThrottlePolicy.Low  // 수행 속도 감소
+17         UISystem.flushCaches()                          // 캐시 메모리 정리
+18         ...
+19
+20     override activate():
+21         UIEngine.throttle = UIEngineThrottlePolicy.High
+22         AnimationCore.freeze = false
+23         .wnd.visible = true                             // 윈도 활성화
+24         ...
+25
+26     /* 라이브러리 및 서비스 초기화 */
+27     init():
+28         UIEngine.init()
+29         ServiceMgr.register(self)
+30         ...
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.36 UIApp을 확장한 MyApp 구현 코드
+----------------------------------------------------------------------------------------
+01 /* UIApp을 확장하여 앱에서 필요한 수명 주기 상태별 기능을 수행 */
+02 MyApp extends UIApp:
+03
+04     /* 앱 화면 구현 */
+05     override create():
+06         super()
+07         .wnd.title = "My Window" // 윈도 타이틀
+08         .wnd.size = {400, 400} // 윈도 크기
+09
+10         // 윈도에 필요한 UI 컴포넌트 추가
+11         .wnd.contain():
+12             myBtn = UIButton(): // 버튼 생성
+13                 .text = "Exit" // 버튼이 출력할 텍스트
+14                 .geometry = {50, 50, 100, 100} // 버튼 위치 및 크기
+15                 // 버튼 클릭 시 앱 종료
+16                 func(UIButton obj, ...):
+17                     self.exit()
+18                 .EventClicked += func
+19
+20 main():
+21     app = MyApp():
+22         .init()
+23         .run()
+24         .term()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.37 뷰와 뷰 관리자 기능 구현
+----------------------------------------------------------------------------------------
+01 /* 앱이 아닌 뷰 단위의 수명 주기 인터페이스 설계
+02    예시의 인터페이스는 AppLifeCycle과 동일하다.
+03    앱은 UIView를 구현함으로써 뷰를 정의하고 동작을 완성한다. */
+04 UIView:
+05
+06     /* 뷰 생성 시 뷰 관리자에 추가 */
+07     constructor():
+08         UIApp.viewMgr.push(self)
+09
+10     /* 뷰 구동에 필요한 사전 작업 수행 */
+11     create()
+12     /* 뷰 종료 시 호출. 뷰 관리자에 의해 강제 종료되는 경우 등 해당 */
+13     destroy()
+14     /* 뷰가 백그라운드(Background)로 전환되는 경우 */
+15     deactivate()
+16     /* 뷰가 포어그라운드(Foreground)로 전환되는 경우 */
+17     activate()
+18     /* 뷰 ID 정보(var) 반환 */
+19     id()
+20
+21 /* 뷰 관리자: 다수의 뷰를 관리하고 기능 조작을 담당하는 역할 수행 */
+22 UIViewMgr:
+23     UIView views[] // 생성된 뷰 목록
+24     UIView current // 현재 활성화된 뷰
+25     ...
+26
+27     /* 새로운 뷰를 추가하고 이를 활성화 */
+28     push(view):
+29         // 기존 활성화 뷰를 비활성화 상태로 변경
+30         if .current.valid()
+31             .current.deactivate()
+32         .current = view
+33         // 목록에 뷰 추가
+34         .views.add(view)
+35         // 새 뷰의 콘텐츠 생성 요청
+36         view.create()
+37         // 새 뷰를 활성화 상태로 전환
+38        view.activate()
+39         ...
+40
+41     /* 현재 뷰를 삭제하고 이전 뷰를 활성화 */
+41     pop():
+42         // 예외: 뷰가 없는 경우?
+43         return if .current.invalid()
+44         // 기존 활성화 뷰를 비활성화 상태로 변경
+45         .current.deactivate()
+46         // 기존 뷰 삭제 요청
+47         .current.destroy()
+48         // 목록에서 뷰 삭제
+49         .views.remove(.current)
+50         // 이전 뷰를 현재로 뷰로 전환
+51         .current = view.last
+52         // 이전 뷰를 활성화 상태로 전환
+53         .current.activate()
+54         ...
+55
+56     /* 모든 뷰를 비활성화 상태로 전환하고 삭제 */
+57     clear():
+58         // 최상위 뷰부터 역으로 비활성화
+59         reverse_for view : .views
+60             view.deactivate()
+61             view.destroy()
+62         .views.clear()
+63
+64     /* 뷰 검색: 주어진 id와 일치한 뷰를 찾아 반환 */
+65     get(id):
+66         for view : .views
+67             return view if view.id == id
+68         return invalid
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.38 UIViewMgr를 이용한 UIApp 구현
+----------------------------------------------------------------------------------------
+01 /* UIApp에서 수명 주기 기본 동작 구현
+02    UIViewMgr를 이용하여 사용자(앱) 뷰들을 관리 */
+03 UIApp implements AppLifeCycle:
+04     UIViewMgr viewMgr
+05 
+06     constructor():
+07         .viewMgr = UIViewMgr()
+08
+09     /* 앱 구동에 필요한 사전 작업 수행.
+10        ServiceMgr는 생성하고자 하는 뷰 정보 전달한다. */
+11     override create(viewId):
+12     // 이미 뷰가 존재하면 해당 뷰를 활성화
+13     view = .viewMgr.get(viewId)
+14     if view.valid()
+15         view.activate()
+16         return true
+17
+18     // 기존에 존재하지 않은 뷰일 경우
+19     return false
+20
+21     /* 앱 종료 시 호출. 앱 관리자에 의해 강제 종료되는 경우 등 해당 */
+22     override destroy():
+23         // 생성된 모든 뷰를 정리
+24         viewMgr.clear()
+25
+26     /* 앱이 백그라운드(Background)로 전환되는 경우 */
+27     override deactivate():
+28         // 현재 뷰 비활성화
+29         view = viewMgr.current
+30         view.deactivate()
+31
+32         AnimationCore.freeze = true                      // 동작 중인 애니메이션 멈춤
+33         UIEngine.throttle = UIEngineThrottlePolicy.Low   // 수행 속도 감소
+34         UISystem.flushCaches()                           // 캐시 메모리 정리
+35         ...
+36
+37     /* 앱이 포어그라운드(Foreground)로 전환되는 경우 */
+38     override activate():
+39         // 상태 복원
+40         UIEngine.throttle = UIEngineThrottlePolicy.High
+41         AnimationCore.freeze = false
+42         // 뷰 활성화
+43         view = viewMgr.current
+44         view.activate()
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.39 UIApp을 확장한 SettingApp 구현
+----------------------------------------------------------------------------------------
+01 /* UIApp을 확장한 SettingApp 뷰 구현 */
+02 SettingApp extends UIApp:
+03 
+04     /* 앱 구동에 필요한 사전 작업 수행.
+05        ServiceMgr 는 생성하고자 하는 뷰 정보를 전달한다. */
+06     override create(viewId):
+07         // 뷰가 이미 생성되어 있는 경우 활성화 후 종료
+08         return true if super()
+09
+10         // 요구한 뷰 ID에 해당하는 뷰 생성.
+11         // 각 커스텀 뷰는 SettingApp 패키지에서 UIView를 확장하여 구현
+12         switch viewId
+13             SettingMain:
+14                 view = UIMainView()
+15             SettingWifi:
+16                 view = UIViewWifi()
+17             SettingConnection:
+18                 view = UIViewConnection()
+19             SettingMobileNetwork:
+20                 view = UIViewMobileNetwork()
+21             ...
+22
+23         return true
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.40 테마 작성 규칙 예
+----------------------------------------------------------------------------------------
+01 UI_Components:                              // 테마 정보
+02     Version: 1.0                            // 작성 버전 정보
+03     Button:                                 // 버튼 컴포넌트
+04         Name = "ButtonStyle1"               // 버튼 스타일 명
+05         State:                              // 버튼 상태
+06             /* 버튼 기본 상태 */
+07             Default:
+08                 Size:                       // 최소, 최대 크기
+09                     Min = 100 50
+10                     Max = 300 100
+11                 Base:                       // 기본 이미지
+12                     Image:
+13                         Path = "background.png"
+14                 Icon:                       // 버튼 아이콘
+15                     Image:
+16                         Path = "default_icon.png"
+17                     Align = 0.0 0.5         // 아이콘 위치: 왼쪽, 중앙 정렬
+18                     Size:                   // 아이콘 크기
+19                         Default = 50 50
+20                         Min = 25 25
+21                         Max = 100 100
+22                 Text:                       // 버튼 레이블
+23                     Font:                   // 레이블 폰트 속성
+24                         Name = "Arial"
+25                         Size = 10
+26                         Align = 0.0 0.5     // 레이블 위치: 왼쪽, 중앙 정렬
+27             /* 버튼 호버 상태 */
+28             Hovered:
+29                 Override = Default          // 버튼 기본 속성을 상속
+30                 Base:                       // 버튼 호버 이미지
+31                     Image:
+32                         Path = "hovered.png"
+33             /* 버튼 눌림 상태 */
+34             Pressed:
+35                 Override = Hovered
+36                 Base:
+37                     Image:
+38                         Path = "pressed.png"
+39             /* 버튼 비활성 상태 */
+40             Disabled:
+41                 Override = Default
+42                 Base:
+43                     Fill = "#4A86E8";       // 버튼 비활성 상태 색상
+44                     Opacity = 50            // 반투명 정보
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.41 사용자 정의 테마 적용
+----------------------------------------------------------------------------------------
+01 // 정의한 테마 적용. 앱에서 호출
+02 UITheme.override = "./res/CustomUI.theme"
+----------------------------------------------------------------------------------------
+
+
+
+
+
+@코드 1.42 사용자 정의 테마 적용(컴포넌트 지정)
+----------------------------------------------------------------------------------------
+01 // 사례 1: 정의한 테마를 모든 UI 컴포넌트에 적용
+02 UITheme.override = "./res/CustomUI.theme"
+03 
+04 // 사례 2: 특정 UI 컴포넌트 인스턴스에만 사용자 정의 테마를 적용
+05 button = UIButton():
+06     .style("./res/CustomUI.theme", "ButtonStyle1")
+----------------------------------------------------------------------------------------
